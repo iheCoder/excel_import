@@ -183,7 +183,7 @@ func (k *importFramework) importContent(whole *rawWhole) error {
 
 		if err := importer.importSection(k.db, content); err != nil {
 			fmt.Printf("import section failed: %v\n", err)
-			return err
+			return util.CombineErrors(content.row, err)
 		}
 	}
 
