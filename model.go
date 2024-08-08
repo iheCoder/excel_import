@@ -7,9 +7,6 @@ type FieldsOrder int
 
 type optionFunc func(*importFramework)
 
-// used for recognize row section
-type sectionRecognizer func(s []string) RowType
-
 type rawWhole struct {
 	rawContents []*rawContent
 }

@@ -24,3 +24,6 @@ type RowModelFactory interface {
 	// get the model
 	getModel() any
 }
+
+// used for recognize row section
+type sectionRecognizer func(s []string) RowType

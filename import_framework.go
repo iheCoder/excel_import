@@ -41,7 +41,7 @@ func WithRowRawModel(rrm RowModelFactory) optionFunc {
 	}
 }
 
-func NewKetImporter(db *gorm.DB, importers map[RowType]SectionImporter, recognizer sectionRecognizer, options ...optionFunc) *importFramework {
+func NewImporterFramework(db *gorm.DB, importers map[RowType]SectionImporter, recognizer sectionRecognizer, options ...optionFunc) *importFramework {
 	invalidSectionCsvWriter := initInvalidSectionCSVWriter()
 
 	ki := &importFramework{
@@ -133,10 +133,10 @@ func (k *importFramework) parseRawWhole(contents [][]string) (*rawWhole, error) 
 	}, nil
 }
 
-func (k *importFramework) checkContent(ketContents *rawWhole) error {
+func (k *importFramework) checkContent(whole *rawWhole) error {
 	var err error
 	var checkFailed bool
-	for i, rc := range ketContents.rawContents {
+	for i, rc := range whole.rawContents {
 		sectionType := rc.sectionType
 		checker, ok := k.checkers[sectionType]
 		if !ok {
@@ -159,8 +159,8 @@ func (k *importFramework) checkContent(ketContents *rawWhole) error {
 	return nil
 }
 
-func (k *importFramework) importContent(ketContent *rawWhole) error {
-	for i, content := range ketContent.rawContents {
+func (k *importFramework) importContent(whole *rawWhole) error {
+	for i, content := range whole.rawContents {
 		if i >= 10 {
 			break
 		}

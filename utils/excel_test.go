@@ -6,7 +6,7 @@ import (
 )
 
 func TestWriteExcelContent(t *testing.T) {
-	path := "excel_test_data.xlsx"
+	path := "testdata/excel_test_data.xlsx"
 	content := map[int][]string{
 		1: {"1", "2", "3", "4", "5"},
 	}
@@ -17,7 +17,7 @@ func TestWriteExcelContent(t *testing.T) {
 }
 
 func TestDivideSheetsIntoTables(t *testing.T) {
-	path := "excel_test_sheets.xlsx"
+	path := "testdata/excel_test_sheets.xlsx"
 	paths, err := DivideSheetsIntoTables(path)
 	if err != nil {
 		t.Fatal(err)
@@ -30,9 +30,9 @@ func TestDivideSheetsIntoTables(t *testing.T) {
 
 func TestCombineTablesIntoOne(t *testing.T) {
 	paths := []string{
-		"excel_test_sheets_Sheet1.xlsx",
-		"excel_test_sheets_Sheet2.xlsx",
-		"excel_test_sheets_Sheet3.xlsx",
+		"testdata/excel_test_sheets_Sheet1.xlsx",
+		"testdata/excel_test_sheets_Sheet2.xlsx",
+		"testdata/excel_test_sheets_Sheet3.xlsx",
 	}
 
 	err := CombineTablesIntoOne(paths...)
