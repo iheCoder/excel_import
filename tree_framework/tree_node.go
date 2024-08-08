@@ -27,6 +27,10 @@ func constructLevelNode(s string, parent *treeNode, level int) *treeNode {
 type treeImportCfg struct {
 	levelOrder []int
 	genKeyFunc generateNodeKey
+	// the start row of the content
+	startRow int
+	// the end condition of the function
+	ef endFunc
 }
 
 func genNodeKey(s []string, level int) string {

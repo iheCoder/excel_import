@@ -1,12 +1,10 @@
 package general_framework
 
 import (
-	"encoding/csv"
 	"errors"
 	"excel_import/utils"
 	"fmt"
 	"gorm.io/gorm"
-	"os"
 )
 
 var (
@@ -62,15 +60,6 @@ func NewImporterFramework(db *gorm.DB, importers map[RowType]SectionImporter, re
 	}
 
 	return ki
-}
-
-func initInvalidSectionCSVWriter() *csv.Writer {
-	path := "invalid_section.csv"
-	file, err := os.Create(path)
-	if err != nil {
-		panic(err)
-	}
-	return csv.NewWriter(file)
 }
 
 func (k *importFramework) Import(path string) error {

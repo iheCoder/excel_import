@@ -14,15 +14,23 @@ type treeImportFramework struct {
 	levelImporter []LevelImporter
 }
 
-func NewTreeImportFramework(db *gorm.DB, cfg *treeImportCfg) *treeImportFramework {
+func NewTreeImportFramework(db *gorm.DB, cfg *treeImportCfg, levelImporter []LevelImporter) *treeImportFramework {
+	if cfg == nil {
+		panic("cfg should not nil")
+	}
+
 	tif := &treeImportFramework{
-		db:    db,
-		cfg:   cfg,
-		nodes: make(map[string]*treeNode),
+		db:            db,
+		cfg:           cfg,
+		nodes:         make(map[string]*treeNode),
+		levelImporter: levelImporter,
 	}
 
 	if tif.cfg.genKeyFunc == nil {
 		tif.cfg.genKeyFunc = defaultKeyGen
+	}
+	if tif.cfg.startRow <= 0 {
+		tif.cfg.startRow = 1
 	}
 
 	return tif
