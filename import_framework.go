@@ -175,7 +175,7 @@ func (k *importFramework) importContent(whole *rawWhole) error {
 		sectionType := content.sectionType
 		importer, ok := k.importers[sectionType]
 		if !ok {
-			fmt.Printf("importer not found for section type: %s, content: %s \n", sectionType, content)
+			fmt.Printf("importer not found for section type: %s, content: %s \n", sectionType, content.content)
 			continue
 		}
 
