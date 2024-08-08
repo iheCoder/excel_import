@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"gorm.io/gorm"
 	"os"
-	"strings"
 )
 
 type RowType string
@@ -141,15 +140,6 @@ func (k *importFramewrok) parseContent(path string) (*ketRawContent, error) {
 	}, nil
 }
 
-func formatCell(cell string) string {
-	return strings.TrimSpace(cell)
-}
-
-// readFileContent reads the content of the file.
-func readFileContent(path string) ([][]string, error) {
-	return nil, nil
-}
-
 func (k *importFramewrok) checkContent(ketContents *ketRawContent) error {
 	var err error
 	var checkFailed bool
@@ -164,7 +154,7 @@ func (k *importFramewrok) checkContent(ketContents *ketRawContent) error {
 
 		if err != nil {
 			checkFailed = true
-			if err = k.recordInvalidError(combineError(i, err)); err != nil {
+			if err = k.recordInvalidError(util.CombineErrors(i, err)); err != nil {
 				return err
 			}
 		}
@@ -174,17 +164,6 @@ func (k *importFramewrok) checkContent(ketContents *ketRawContent) error {
 		return errContentCheckFailed
 	}
 	return nil
-}
-
-func combineError(row int, errs ...error) error {
-	errStr := fmt.Sprintf("第%d行数据格式错误: ", row+1)
-	for _, err := range errs {
-		if err == nil {
-			continue
-		}
-		errStr += err.Error() + "; "
-	}
-	return errors.New(errStr)
 }
 
 func (k *importFramewrok) importContent(ketContent *ketRawContent) error {
