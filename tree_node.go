@@ -1,7 +1,7 @@
 package excel_import
 
 type treeNode struct {
-	key      string
+	value    string
 	parent   *treeNode
 	rank     int
 	children []*treeNode
@@ -15,7 +15,7 @@ func constructLevelNode(s []string, parent *treeNode, level int) {
 			continue
 		}
 		m[v] = true
-		parent.children = append(parent.children, &treeNode{parent: parent, rank: level, key: v})
+		parent.children = append(parent.children, &treeNode{parent: parent, rank: level, value: v})
 	}
 
 	return
