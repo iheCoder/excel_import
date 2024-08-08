@@ -20,3 +20,7 @@ func constructLevelNode(s []string, parent *treeNode, level int) {
 
 	return
 }
+
+type orderLevelCfg struct {
+	levelOrder []int
+}
