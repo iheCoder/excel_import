@@ -12,7 +12,7 @@ func TestConstructTree(t *testing.T) {
 	cfg := &treeImportCfg{
 		levelOrder: []int{0, 1, 2, 3, 4},
 	}
-	tif := NewTreeImportFramework(nil, cfg)
+	tif := NewTreeImportFramework(nil, cfg, nil)
 
 	root, err := tif.constructTree(contents)
 	if err != nil {

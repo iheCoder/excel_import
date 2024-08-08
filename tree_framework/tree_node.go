@@ -6,6 +6,16 @@ var (
 	defaultKeyGen = genNodeKey
 )
 
+type rawCellContent struct {
+	val    string
+	isLeaf bool
+}
+
+type rawCellWhole struct {
+	contents     [][]string
+	cellContents [][]rawCellContent
+}
+
 type treeNode struct {
 	value    string
 	parent   *treeNode

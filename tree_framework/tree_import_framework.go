@@ -36,6 +36,18 @@ func NewTreeImportFramework(db *gorm.DB, cfg *treeImportCfg, levelImporter []Lev
 	return tif
 }
 
+func (t *treeImportFramework) parseRawWhole(content [][]string) (*rawCellWhole, error) {
+	cellContents := make([][]rawCellContent, len(content))
+	for i, row := range content {
+		cellContents[i] = make([]rawCellContent, len(row))
+		for j, cell := range row {
+			cellContents[i][j] = rawCellContent{val: cell, isLeaf: j == len(row)-1 || len(row[j+1]) == 0}
+		}
+	}
+
+	return &rawCellWhole{contents: content, cellContents: cellContents}, nil
+}
+
 func (t *treeImportFramework) importTree(contents [][]string) error {
 	root, err := t.constructTree(contents)
 	if err != nil {
