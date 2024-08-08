@@ -12,9 +12,10 @@ type treeImportFramework struct {
 	cfg           *treeImportCfg
 	nodes         map[string]*treeNode
 	levelImporter []LevelImporter
+	ocfg          *treeImportOptionalCfg
 }
 
-func NewTreeImportFramework(db *gorm.DB, cfg *treeImportCfg, levelImporter []LevelImporter) *treeImportFramework {
+func NewTreeImportFramework(db *gorm.DB, cfg *treeImportCfg, levelImporter []LevelImporter, options ...optionFunc) *treeImportFramework {
 	if cfg == nil {
 		panic("cfg should not nil")
 	}
@@ -24,19 +25,38 @@ func NewTreeImportFramework(db *gorm.DB, cfg *treeImportCfg, levelImporter []Lev
 		cfg:           cfg,
 		nodes:         make(map[string]*treeNode),
 		levelImporter: levelImporter,
+		ocfg:          defaultOptCfg,
 	}
 
-	if tif.cfg.genKeyFunc == nil {
-		tif.cfg.genKeyFunc = defaultKeyGen
-	}
-	if tif.cfg.startRow <= 0 {
-		tif.cfg.startRow = 1
-	}
-	if tif.cfg.cf == nil {
-		tif.cfg.cf = defaultRowEndFunc
+	for _, option := range options {
+		option(tif)
 	}
 
 	return tif
+}
+
+func WithGenKeyFunc(gkf generateNodeKey) optionFunc {
+	return func(framework *treeImportFramework) {
+		framework.ocfg.genKeyFunc = gkf
+	}
+}
+
+func WithStartRow(sr int) optionFunc {
+	return func(framework *treeImportFramework) {
+		framework.ocfg.startRow = sr
+	}
+}
+
+func WithEndFunc(ef rowEndFunc) optionFunc {
+	return func(framework *treeImportFramework) {
+		framework.ocfg.ef = ef
+	}
+}
+
+func WithColEndFunc(cf colEndFunc) optionFunc {
+	return func(framework *treeImportFramework) {
+		framework.ocfg.cf = cf
+	}
 }
 
 func (t *treeImportFramework) parseRawWhole(content [][]string) (*rawCellWhole, error) {
@@ -60,7 +80,7 @@ func (t *treeImportFramework) checkIsLeaf(i int, row []string) bool {
 	if i+1 < len(row) {
 		next = row[i+1]
 	}
-	return t.cfg.cf(next)
+	return t.ocfg.cf(next)
 }
 
 func (t *treeImportFramework) importTree(contents [][]string) error {
@@ -94,7 +114,7 @@ func (t *treeImportFramework) constructTree(rcContents [][]string) (*treeNode, e
 	parent := root
 	for level, i := range t.cfg.levelOrder {
 		for j, s := range contents[i] {
-			curKey := t.cfg.genKeyFunc(rcContents[j][:i+1], level+1)
+			curKey := t.ocfg.genKeyFunc(rcContents[j][:i+1], level+1)
 			if _, ok := t.nodes[curKey]; ok {
 				continue
 			}
@@ -117,7 +137,7 @@ func (t *treeImportFramework) constructTree(rcContents [][]string) (*treeNode, e
 }
 
 func (t *treeImportFramework) findParent(s []string, level int) *treeNode {
-	key := t.cfg.genKeyFunc(s, level)
+	key := t.ocfg.genKeyFunc(s, level)
 	if node, ok := t.nodes[key]; ok {
 		return node
 	}

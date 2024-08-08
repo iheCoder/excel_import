@@ -4,6 +4,11 @@ import "fmt"
 
 var (
 	defaultKeyGen = genNodeKey
+	defaultOptCfg = &treeImportOptionalCfg{
+		genKeyFunc: defaultKeyGen,
+		startRow:   1,
+		cf:         defaultRowEndFunc,
+	}
 )
 
 type rawCellContent struct {
@@ -36,13 +41,16 @@ func constructLevelNode(s string, parent *treeNode, level int) *treeNode {
 
 type treeImportCfg struct {
 	levelOrder []int
+	// the boundary of the tree node
+	boundary int
+}
+
+type treeImportOptionalCfg struct {
 	genKeyFunc generateNodeKey
 	// the start row of the content
 	startRow int
 	// the end condition of the function
 	ef rowEndFunc
-	// the boundary of the tree node
-	boundary int
 	// the end condition of the column
 	cf colEndFunc
 }
