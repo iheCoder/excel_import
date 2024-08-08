@@ -40,7 +40,7 @@ var (
 	errContentCheckFailed = errors.New("content check failed")
 )
 
-type importFramewrok struct {
+type importFramework struct {
 	db                      *gorm.DB
 	invalidSectionCsvWriter *csv.Writer
 	checkers                map[RowType]SectionChecker
@@ -50,23 +50,23 @@ type importFramewrok struct {
 }
 
 func WithPostHandlers(postHandlers map[RowType]SectionPostHandler) optionFunc {
-	return func(ki *importFramewrok) {
+	return func(ki *importFramework) {
 		ki.postHandlers = postHandlers
 	}
 }
 
 func WithCheckers(checkers map[RowType]SectionChecker) optionFunc {
-	return func(ki *importFramewrok) {
+	return func(ki *importFramework) {
 		ki.checkers = checkers
 	}
 }
 
-type optionFunc func(*importFramewrok)
+type optionFunc func(*importFramework)
 
-func NewKetImporter(db *gorm.DB, importers map[RowType]SectionImporter, recognizer sectionRecognizer, options ...optionFunc) *importFramewrok {
+func NewKetImporter(db *gorm.DB, importers map[RowType]SectionImporter, recognizer sectionRecognizer, options ...optionFunc) *importFramework {
 	invalidSectionCsvWriter := initInvalidSectionCSVWriter()
 
-	ki := &importFramewrok{
+	ki := &importFramework{
 		db:                      db,
 		invalidSectionCsvWriter: invalidSectionCsvWriter,
 		importers:               importers,
@@ -94,7 +94,7 @@ type ketRawContent struct {
 	content      [][]string
 }
 
-func (k *importFramewrok) Import(path string) error {
+func (k *importFramework) Import(path string) error {
 	defer k.invalidSectionCsvWriter.Flush()
 	content, err := k.parseContent(path)
 	if err != nil {
@@ -120,7 +120,7 @@ func (k *importFramewrok) Import(path string) error {
 	return nil
 }
 
-func (k *importFramewrok) parseContent(path string) (*ketRawContent, error) {
+func (k *importFramework) parseContent(path string) (*ketRawContent, error) {
 	content, err := util.ReadExcelContent(path)
 	if err != nil {
 		return nil, err
@@ -140,7 +140,7 @@ func (k *importFramewrok) parseContent(path string) (*ketRawContent, error) {
 	}, nil
 }
 
-func (k *importFramewrok) checkContent(ketContents *ketRawContent) error {
+func (k *importFramework) checkContent(ketContents *ketRawContent) error {
 	var err error
 	var checkFailed bool
 	for i, s := range ketContents.content {
@@ -166,7 +166,7 @@ func (k *importFramewrok) checkContent(ketContents *ketRawContent) error {
 	return nil
 }
 
-func (k *importFramewrok) importContent(ketContent *ketRawContent) error {
+func (k *importFramework) importContent(ketContent *ketRawContent) error {
 	for i, content := range ketContent.content {
 		if i >= 10 {
 			break
@@ -187,7 +187,7 @@ func (k *importFramewrok) importContent(ketContent *ketRawContent) error {
 	return nil
 }
 
-func (k *importFramewrok) postHandle() error {
+func (k *importFramework) postHandle() error {
 	for _, handler := range k.postHandlers {
 		if err := handler.postHandle(k.db); err != nil {
 			return err
@@ -197,7 +197,7 @@ func (k *importFramewrok) postHandle() error {
 	return nil
 }
 
-func (k *importFramewrok) recordInvalidError(err error) error {
+func (k *importFramework) recordInvalidError(err error) error {
 	// Write the error into the csv file.
 	return k.invalidSectionCsvWriter.Write([]string{err.Error()})
 }
