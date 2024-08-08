@@ -32,6 +32,9 @@ func NewTreeImportFramework(db *gorm.DB, cfg *treeImportCfg, levelImporter []Lev
 	if tif.cfg.startRow <= 0 {
 		tif.cfg.startRow = 1
 	}
+	if tif.cfg.cf == nil {
+		tif.cfg.cf = defaultRowEndFunc
+	}
 
 	return tif
 }
@@ -41,11 +44,23 @@ func (t *treeImportFramework) parseRawWhole(content [][]string) (*rawCellWhole, 
 	for i, row := range content {
 		cellContents[i] = make([]rawCellContent, len(row))
 		for j, cell := range row {
-			cellContents[i][j] = rawCellContent{val: cell, isLeaf: j == len(row)-1 || len(row[j+1]) == 0}
+			cellContents[i][j] = rawCellContent{val: cell, isLeaf: t.checkIsLeaf(i, row)}
 		}
 	}
 
 	return &rawCellWhole{contents: content, cellContents: cellContents}, nil
+}
+
+func (t *treeImportFramework) checkIsLeaf(i int, row []string) bool {
+	if i == t.cfg.boundary {
+		return true
+	}
+
+	var next string
+	if i+1 < len(row) {
+		next = row[i+1]
+	}
+	return t.cfg.cf(next)
 }
 
 func (t *treeImportFramework) importTree(contents [][]string) error {

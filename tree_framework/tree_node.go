@@ -40,7 +40,11 @@ type treeImportCfg struct {
 	// the start row of the content
 	startRow int
 	// the end condition of the function
-	ef endFunc
+	ef rowEndFunc
+	// the boundary of the tree node
+	boundary int
+	// the end condition of the column
+	cf colEndFunc
 }
 
 func genNodeKey(s []string, level int) string {
@@ -54,4 +58,8 @@ func genPrefixNodeKey(s []string, level int) string {
 	}
 	key += fmt.Sprintf("%d", level)
 	return key
+}
+
+func defaultRowEndFunc(next string) bool {
+	return len(next) == 0
 }

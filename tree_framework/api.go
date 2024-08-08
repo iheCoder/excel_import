@@ -8,4 +8,5 @@ type LevelImporter interface {
 }
 
 type generateNodeKey func(s []string, level int) string
-type endFunc func(s []string) bool
+type rowEndFunc func(s []string) bool
+type colEndFunc func(next string) bool
