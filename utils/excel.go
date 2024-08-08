@@ -186,3 +186,74 @@ func CombineTablesIntoOne(paths ...string) error {
 
 	return f.Save(paths[0])
 }
+
+// DivideExcelContent 拆分Excel数据到多个文件
+func DivideExcelContent(path string, rowLimit int) ([]string, error) {
+	records, err := ReadExcelContent(path)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(records) <= rowLimit {
+		return []string{path}, nil
+	}
+
+	var filePaths []string
+	for i := 0; i < len(records); i += rowLimit {
+		subRecords := records[i:min(i+rowLimit, len(records))]
+		subPath := strings.TrimSuffix(path, filepath.Ext(path)) + fmt.Sprintf("_%d", i) + filepath.Ext(path)
+
+		if err = WriteExcelContent(subPath, subRecords); err != nil {
+			return nil, err
+		}
+		filePaths = append(filePaths, subPath)
+	}
+
+	return filePaths, nil
+}
+
+func WriteExcelContent(path string, content [][]string) error {
+	ext := strings.ToLower(filepath.Ext(path))
+	switch ext {
+	case ".csv":
+		return writeCSVContent(path, content)
+	case ".xlsx":
+		return writeXLSXContent(path, content)
+	default:
+		return fmt.Errorf("unsupported file type: %s", ext)
+	}
+}
+
+func writeCSVContent(path string, content [][]string) error {
+	file, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+
+	writer := csv.NewWriter(file)
+	for _, record := range content {
+		if err = writer.Write(record); err != nil {
+			return err
+		}
+	}
+
+	writer.Flush()
+	return nil
+}
+
+func writeXLSXContent(path string, content [][]string) error {
+	f := xlsx.NewFile()
+	sheet, err := f.AddSheet("Sheet1")
+	if err != nil {
+		return err
+	}
+
+	for _, record := range content {
+		row := sheet.AddRow()
+		for _, cell := range record {
+			row.AddCell().SetString(cell)
+		}
+	}
+
+	return f.Save(path)
+}
