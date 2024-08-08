@@ -1,5 +1,11 @@
 package excel_import
 
+import "fmt"
+
+var (
+	defaultKeyGen = genNodeKey
+)
+
 type treeNode struct {
 	value    string
 	parent   *treeNode
@@ -18,6 +24,20 @@ func constructLevelNode(s string, parent *treeNode, level int) *treeNode {
 	return node
 }
 
-type orderLevelCfg struct {
+type treeImportCfg struct {
 	levelOrder []int
+	genKeyFunc generateNodeKey
+}
+
+func genNodeKey(s []string, level int) string {
+	return fmt.Sprintf("%s_%d", s[len(s)-1], level)
+}
+
+func genPrefixNodeKey(s []string, level int) string {
+	var key string
+	for _, x := range s {
+		key += x + "_"
+	}
+	key += fmt.Sprintf("%d", level)
+	return key
 }

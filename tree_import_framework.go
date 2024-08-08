@@ -8,17 +8,23 @@ import (
 type treeImportFramework struct {
 	db            *gorm.DB
 	recorder      *unexpectedRecorder
-	cfg           *orderLevelCfg
+	cfg           *treeImportCfg
 	nodes         map[string]*treeNode
 	levelImporter []LevelImporter
 }
 
-func NewTreeImportFramework(db *gorm.DB, cfg *orderLevelCfg) *treeImportFramework {
-	return &treeImportFramework{
+func NewTreeImportFramework(db *gorm.DB, cfg *treeImportCfg) *treeImportFramework {
+	tif := &treeImportFramework{
 		db:    db,
 		cfg:   cfg,
 		nodes: make(map[string]*treeNode),
 	}
+
+	if tif.cfg.genKeyFunc == nil {
+		tif.cfg.genKeyFunc = defaultKeyGen
+	}
+
+	return tif
 }
 
 func (t *treeImportFramework) importTree(contents [][]string) error {
@@ -43,23 +49,23 @@ func (t *treeImportFramework) importTree(contents [][]string) error {
 	return nil
 }
 
-func (t *treeImportFramework) constructTree(contents [][]string) (*treeNode, error) {
+func (t *treeImportFramework) constructTree(rcContents [][]string) (*treeNode, error) {
 	// reverse the matrix
-	contents = reverseMatrix(contents)
+	contents := reverseMatrix(rcContents)
 
 	// construct the tree
 	root := &treeNode{}
 	parent := root
 	for level, i := range t.cfg.levelOrder {
 		for j, s := range contents[i] {
-			curKey := genNodeKey(s, level+1)
+			curKey := t.cfg.genKeyFunc(rcContents[j][:i+1], level+1)
 			if _, ok := t.nodes[curKey]; ok {
 				continue
 			}
 
 			if level > 0 {
 				porder := t.cfg.levelOrder[level-1]
-				parent = t.findParent(contents[porder][j], level)
+				parent = t.findParent(rcContents[j][:porder+1], level)
 			}
 
 			if parent == nil {
@@ -67,23 +73,19 @@ func (t *treeImportFramework) constructTree(contents [][]string) (*treeNode, err
 			}
 
 			node := constructLevelNode(s, parent, level+1)
-			t.nodes[genNodeKey(s, level+1)] = node
+			t.nodes[curKey] = node
 		}
 	}
 
 	return root, nil
 }
 
-func (t *treeImportFramework) findParent(s string, level int) *treeNode {
-	key := genNodeKey(s, level)
+func (t *treeImportFramework) findParent(s []string, level int) *treeNode {
+	key := t.cfg.genKeyFunc(s, level)
 	if node, ok := t.nodes[key]; ok {
 		return node
 	}
 	return nil
-}
-
-func genNodeKey(s string, level int) string {
-	return fmt.Sprintf("%s_%d", s, level)
 }
 
 func reverseMatrix(contents [][]string) [][]string {
