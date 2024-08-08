@@ -6,10 +6,11 @@ import (
 )
 
 type treeImportFramework struct {
-	db       *gorm.DB
-	recorder *unexpectedRecorder
-	cfg      *orderLevelCfg
-	nodes    map[string]*treeNode
+	db            *gorm.DB
+	recorder      *unexpectedRecorder
+	cfg           *orderLevelCfg
+	nodes         map[string]*treeNode
+	levelImporter []LevelImporter
 }
 
 func NewTreeImportFramework(db *gorm.DB, cfg *orderLevelCfg) *treeImportFramework {
@@ -18,6 +19,28 @@ func NewTreeImportFramework(db *gorm.DB, cfg *orderLevelCfg) *treeImportFramewor
 		cfg:   cfg,
 		nodes: make(map[string]*treeNode),
 	}
+}
+
+func (t *treeImportFramework) importTree(contents [][]string) error {
+	root, err := t.constructTree(contents)
+	if err != nil {
+		return err
+	}
+
+	children := root.children
+	for _, importer := range t.levelImporter {
+		nextChildren := make([]*treeNode, 0)
+		for _, child := range children {
+			if err = importer.ImportLevelNode(t.db, child); err != nil {
+				return err
+			}
+			nextChildren = append(nextChildren, child.children...)
+		}
+
+		children = nextChildren
+	}
+
+	return nil
 }
 
 func (t *treeImportFramework) constructTree(contents [][]string) (*treeNode, error) {
