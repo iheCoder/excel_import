@@ -10,7 +10,12 @@ type optionFunc func(*importFramework)
 // used for recognize row section
 type sectionRecognizer func(s []string) RowType
 
+type rawWhole struct {
+	rawContents []*rawContent
+}
+
 type rawContent struct {
-	sectionTypes []RowType
-	content      [][]string
+	sectionType RowType
+	content     []string
+	model       any
 }

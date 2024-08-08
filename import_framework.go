@@ -3,7 +3,7 @@ package excel_import
 import (
 	"encoding/csv"
 	"errors"
-	util "excel_import/utils"
+	"excel_import/utils"
 	"fmt"
 	"gorm.io/gorm"
 	"os"
@@ -20,17 +20,24 @@ type importFramework struct {
 	importers               map[RowType]SectionImporter
 	recognizer              sectionRecognizer
 	postHandlers            map[RowType]SectionPostHandler
+	rowRawModel             RowModelFactory
 }
 
 func WithPostHandlers(postHandlers map[RowType]SectionPostHandler) optionFunc {
-	return func(ki *importFramework) {
-		ki.postHandlers = postHandlers
+	return func(framework *importFramework) {
+		framework.postHandlers = postHandlers
 	}
 }
 
 func WithCheckers(checkers map[RowType]SectionChecker) optionFunc {
-	return func(ki *importFramework) {
-		ki.checkers = checkers
+	return func(framework *importFramework) {
+		framework.checkers = checkers
+	}
+}
+
+func WithRowRawModel(rrm RowModelFactory) optionFunc {
+	return func(framework *importFramework) {
+		framework.rowRawModel = rrm
 	}
 }
 
@@ -86,7 +93,7 @@ func (k *importFramework) Import(path string) error {
 	return nil
 }
 
-func (k *importFramework) parseContent(path string) (*rawContent, error) {
+func (k *importFramework) parseContent(path string) (*rawWhole, error) {
 	content, err := util.ReadExcelContent(path)
 	if err != nil {
 		return nil, err
@@ -94,29 +101,49 @@ func (k *importFramework) parseContent(path string) (*rawContent, error) {
 	// skip the header
 	content = content[1:]
 
-	sectionTypes := make([]RowType, 0, len(content))
-	for _, s := range content {
-		sectionType := k.recognizer(s)
-		sectionTypes = append(sectionTypes, sectionType)
+	return k.parseRawWhole(content)
+}
+
+func (k *importFramework) parseRawWhole(contents [][]string) (*rawWhole, error) {
+	rawContents := make([]*rawContent, 0, len(contents))
+	for _, content := range contents {
+		// if the content is less than the min column count, complete it with empty string
+		if len(content) < k.rowRawModel.minColumnCount() {
+			content = append(content, make([]string, k.rowRawModel.minColumnCount()-len(content))...)
+		}
+
+		// recognize the section type
+		sectionType := k.recognizer(content)
+
+		// parse the content into models
+		model := k.rowRawModel.getModel()
+		if err := util.FillModelOrder(model, content); err != nil {
+			return nil, err
+		}
+
+		rawContents = append(rawContents, &rawContent{
+			sectionType: sectionType,
+			content:     content,
+			model:       model,
+		})
 	}
 
-	return &rawContent{
-		sectionTypes: sectionTypes,
-		content:      content,
+	return &rawWhole{
+		rawContents: rawContents,
 	}, nil
 }
 
-func (k *importFramework) checkContent(ketContents *rawContent) error {
+func (k *importFramework) checkContent(ketContents *rawWhole) error {
 	var err error
 	var checkFailed bool
-	for i, s := range ketContents.content {
-		sectionType := ketContents.sectionTypes[i]
+	for i, rc := range ketContents.rawContents {
+		sectionType := rc.sectionType
 		checker, ok := k.checkers[sectionType]
 		if !ok {
 			continue
 		}
 
-		err = checker.checkValid(s)
+		err = checker.checkValid(rc)
 
 		if err != nil {
 			checkFailed = true
@@ -132,12 +159,12 @@ func (k *importFramework) checkContent(ketContents *rawContent) error {
 	return nil
 }
 
-func (k *importFramework) importContent(ketContent *rawContent) error {
-	for i, content := range ketContent.content {
+func (k *importFramework) importContent(ketContent *rawWhole) error {
+	for i, content := range ketContent.rawContents {
 		if i >= 10 {
 			break
 		}
-		sectionType := ketContent.sectionTypes[i]
+		sectionType := content.sectionType
 		importer, ok := k.importers[sectionType]
 		if !ok {
 			fmt.Printf("importer not found for section type: %s, content: %s \n", sectionType, content)

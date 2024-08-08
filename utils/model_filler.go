@@ -6,6 +6,14 @@ import (
 	"strconv"
 )
 
+func FillModelOrder(model any, values []string) error {
+	fieldOrders := make([]int, len(values))
+	for i := 0; i < len(values); i++ {
+		fieldOrders[i] = i
+	}
+	return FillModel(model, values, fieldOrders)
+}
+
 func FillModel(model interface{}, values []string, fieldOrders []int) error {
 	v := reflect.ValueOf(model)
 
