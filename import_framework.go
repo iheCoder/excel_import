@@ -14,14 +14,14 @@ var (
 )
 
 type importFramework struct {
-	db                      *gorm.DB
-	invalidSectionCsvWriter *csv.Writer
-	checkers                map[RowType]SectionChecker
-	importers               map[RowType]SectionImporter
-	recognizer              sectionRecognizer
-	postHandlers            map[RowType]SectionPostHandler
-	rowRawModel             RowModelFactory
-	control                 importControl
+	db           *gorm.DB
+	recorder     *unexpectedRecorder
+	checkers     map[RowType]SectionChecker
+	importers    map[RowType]SectionImporter
+	recognizer   sectionRecognizer
+	postHandlers map[RowType]SectionPostHandler
+	rowRawModel  RowModelFactory
+	control      importControl
 }
 
 func WithPostHandlers(postHandlers map[RowType]SectionPostHandler) optionFunc {
@@ -49,14 +49,12 @@ func WithRowRawModel(rrm RowModelFactory) optionFunc {
 }
 
 func NewImporterFramework(db *gorm.DB, importers map[RowType]SectionImporter, recognizer sectionRecognizer, options ...optionFunc) *importFramework {
-	invalidSectionCsvWriter := initInvalidSectionCSVWriter()
-
 	ki := &importFramework{
-		db:                      db,
-		invalidSectionCsvWriter: invalidSectionCsvWriter,
-		importers:               importers,
-		recognizer:              recognizer,
-		control:                 defaultImportControl,
+		db:         db,
+		recorder:   newDefaultUnexpectedRecorder(),
+		importers:  importers,
+		recognizer: recognizer,
+		control:    defaultImportControl,
 	}
 
 	for _, option := range options {
@@ -76,7 +74,7 @@ func initInvalidSectionCSVWriter() *csv.Writer {
 }
 
 func (k *importFramework) Import(path string) error {
-	defer k.invalidSectionCsvWriter.Flush()
+	defer k.recorder.Flush()
 	content, err := k.parseContent(path)
 	if err != nil {
 		fmt.Printf("read file content failed: %v\n", err)
@@ -160,7 +158,7 @@ func (k *importFramework) checkContent(whole *rawWhole) error {
 
 		if err != nil {
 			checkFailed = true
-			if err = k.recordInvalidError(util.CombineErrors(i, err)); err != nil {
+			if err = k.recorder.RecordCheckError(util.CombineErrors(i, err)); err != nil {
 				return err
 			}
 		}
@@ -198,9 +196,4 @@ func (k *importFramework) postHandle() error {
 	}
 
 	return nil
-}
-
-func (k *importFramework) recordInvalidError(err error) error {
-	// Write the error into the csv file.
-	return k.invalidSectionCsvWriter.Write([]string{err.Error()})
 }
