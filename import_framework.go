@@ -21,6 +21,7 @@ type importFramework struct {
 	recognizer              sectionRecognizer
 	postHandlers            map[RowType]SectionPostHandler
 	rowRawModel             RowModelFactory
+	control                 importControl
 }
 
 func WithPostHandlers(postHandlers map[RowType]SectionPostHandler) optionFunc {
@@ -32,6 +33,12 @@ func WithPostHandlers(postHandlers map[RowType]SectionPostHandler) optionFunc {
 func WithCheckers(checkers map[RowType]SectionChecker) optionFunc {
 	return func(framework *importFramework) {
 		framework.checkers = checkers
+	}
+}
+
+func WithControl(control importControl) optionFunc {
+	return func(framework *importFramework) {
+		framework.control = control
 	}
 }
 
@@ -49,6 +56,7 @@ func NewImporterFramework(db *gorm.DB, importers map[RowType]SectionImporter, re
 		invalidSectionCsvWriter: invalidSectionCsvWriter,
 		importers:               importers,
 		recognizer:              recognizer,
+		control:                 defaultImportControl,
 	}
 
 	for _, option := range options {
@@ -98,15 +106,19 @@ func (k *importFramework) parseContent(path string) (*rawWhole, error) {
 	if err != nil {
 		return nil, err
 	}
-	// skip the header
-	content = content[1:]
+	// skip the header default
+	content = content[k.control.startRow:]
 
 	return k.parseRawWhole(content)
 }
 
 func (k *importFramework) parseRawWhole(contents [][]string) (*rawWhole, error) {
 	rawContents := make([]*rawContent, 0, len(contents))
-	for _, content := range contents {
+	for i, content := range contents {
+		if k.control.ef != nil && k.control.ef(content) {
+			break
+		}
+
 		// if the content is less than the min column count, complete it with empty string
 		if len(content) < k.rowRawModel.minColumnCount() {
 			content = append(content, make([]string, k.rowRawModel.minColumnCount()-len(content))...)
@@ -125,6 +137,7 @@ func (k *importFramework) parseRawWhole(contents [][]string) (*rawWhole, error) 
 			sectionType: sectionType,
 			content:     content,
 			model:       model,
+			row:         i + k.control.startRow,
 		})
 	}
 
@@ -160,10 +173,7 @@ func (k *importFramework) checkContent(whole *rawWhole) error {
 }
 
 func (k *importFramework) importContent(whole *rawWhole) error {
-	for i, content := range whole.rawContents {
-		if i >= 10 {
-			break
-		}
+	for _, content := range whole.rawContents {
 		sectionType := content.sectionType
 		importer, ok := k.importers[sectionType]
 		if !ok {
