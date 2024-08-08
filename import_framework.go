@@ -9,33 +9,6 @@ import (
 	"os"
 )
 
-type RowType string
-type ColumnType int
-
-type SectionChecker interface {
-	// checkValid checks the validity of the section.
-	// if encounter an invalid section, return an error and record into the file.
-	checkValid(s []string) error
-}
-
-type SectionImporter interface {
-	// importSection imports the section.
-	importSection(tx *gorm.DB, s []string) error
-}
-
-type SectionPostHandler interface {
-	// postHandle post handle the section.
-	postHandle(tx *gorm.DB) error
-}
-
-type sectionContent struct {
-	rawContent []string
-	studyOrder int
-}
-
-type ketFieldsOrder int
-type sectionRecognizer func(s []string) RowType
-
 var (
 	errContentCheckFailed = errors.New("content check failed")
 )
@@ -61,8 +34,6 @@ func WithCheckers(checkers map[RowType]SectionChecker) optionFunc {
 	}
 }
 
-type optionFunc func(*importFramework)
-
 func NewKetImporter(db *gorm.DB, importers map[RowType]SectionImporter, recognizer sectionRecognizer, options ...optionFunc) *importFramework {
 	invalidSectionCsvWriter := initInvalidSectionCSVWriter()
 
@@ -87,11 +58,6 @@ func initInvalidSectionCSVWriter() *csv.Writer {
 		panic(err)
 	}
 	return csv.NewWriter(file)
-}
-
-type ketRawContent struct {
-	sectionTypes []RowType
-	content      [][]string
 }
 
 func (k *importFramework) Import(path string) error {
@@ -120,7 +86,7 @@ func (k *importFramework) Import(path string) error {
 	return nil
 }
 
-func (k *importFramework) parseContent(path string) (*ketRawContent, error) {
+func (k *importFramework) parseContent(path string) (*rawContent, error) {
 	content, err := util.ReadExcelContent(path)
 	if err != nil {
 		return nil, err
@@ -134,13 +100,13 @@ func (k *importFramework) parseContent(path string) (*ketRawContent, error) {
 		sectionTypes = append(sectionTypes, sectionType)
 	}
 
-	return &ketRawContent{
+	return &rawContent{
 		sectionTypes: sectionTypes,
 		content:      content,
 	}, nil
 }
 
-func (k *importFramework) checkContent(ketContents *ketRawContent) error {
+func (k *importFramework) checkContent(ketContents *rawContent) error {
 	var err error
 	var checkFailed bool
 	for i, s := range ketContents.content {
@@ -166,7 +132,7 @@ func (k *importFramework) checkContent(ketContents *ketRawContent) error {
 	return nil
 }
 
-func (k *importFramework) importContent(ketContent *ketRawContent) error {
+func (k *importFramework) importContent(ketContent *rawContent) error {
 	for i, content := range ketContent.content {
 		if i >= 10 {
 			break
