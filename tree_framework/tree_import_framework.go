@@ -1,13 +1,14 @@
-package excel_import
+package tree_framework
 
 import (
+	"excel_import/utils"
 	"fmt"
 	"gorm.io/gorm"
 )
 
 type treeImportFramework struct {
 	db            *gorm.DB
-	recorder      *unexpectedRecorder
+	recorder      *util.UnexpectedRecorder
 	cfg           *treeImportCfg
 	nodes         map[string]*treeNode
 	levelImporter []LevelImporter

@@ -1,4 +1,4 @@
-package excel_import
+package general_framework
 
 import (
 	"gorm.io/gorm"
@@ -16,7 +16,7 @@ func TestImportFramework_Import(t *testing.T) {
 	}
 
 	framework := NewImporterFramework(nil, importers, psr, WithRowRawModel(stdi))
-	path := "testdata/excel_test_data.xlsx"
+	path := "../testdata/excel_test_data.xlsx"
 
 	err := framework.Import(path)
 	if err != nil {

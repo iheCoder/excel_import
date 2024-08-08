@@ -1,4 +1,4 @@
-package excel_import
+package general_framework
 
 import (
 	"encoding/csv"
@@ -15,7 +15,7 @@ var (
 
 type importFramework struct {
 	db           *gorm.DB
-	recorder     *unexpectedRecorder
+	recorder     *util.UnexpectedRecorder
 	checkers     map[RowType]SectionChecker
 	importers    map[RowType]SectionImporter
 	recognizer   sectionRecognizer
@@ -51,7 +51,7 @@ func WithRowRawModel(rrm RowModelFactory) optionFunc {
 func NewImporterFramework(db *gorm.DB, importers map[RowType]SectionImporter, recognizer sectionRecognizer, options ...optionFunc) *importFramework {
 	ki := &importFramework{
 		db:         db,
-		recorder:   newDefaultUnexpectedRecorder(),
+		recorder:   util.NewDefaultUnexpectedRecorder(),
 		importers:  importers,
 		recognizer: recognizer,
 		control:    defaultImportControl,

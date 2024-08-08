@@ -1,4 +1,4 @@
-package excel_import
+package general_framework
 
 import "gorm.io/gorm"
 

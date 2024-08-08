@@ -1,4 +1,4 @@
-package excel_import
+package util
 
 import (
 	"encoding/csv"
@@ -7,18 +7,18 @@ import (
 
 const checkFailedPath = "check_failed.csv"
 
-type unexpectedRecorder struct {
+type UnexpectedRecorder struct {
 	checkFailedPath      string
 	checkFailedCsvWriter *csv.Writer
 }
 
-func newDefaultUnexpectedRecorder() *unexpectedRecorder {
-	return &unexpectedRecorder{
+func NewDefaultUnexpectedRecorder() *UnexpectedRecorder {
+	return &UnexpectedRecorder{
 		checkFailedPath: checkFailedPath,
 	}
 }
 
-func (u *unexpectedRecorder) RecordCheckError(err error) error {
+func (u *UnexpectedRecorder) RecordCheckError(err error) error {
 	if err == nil {
 		return nil
 	}
@@ -35,7 +35,7 @@ func (u *unexpectedRecorder) RecordCheckError(err error) error {
 	return u.checkFailedCsvWriter.Write([]string{err.Error()})
 }
 
-func (u *unexpectedRecorder) initCheckFailedCsvWriter() error {
+func (u *UnexpectedRecorder) initCheckFailedCsvWriter() error {
 	file, err := os.Create(u.checkFailedPath)
 	if err != nil {
 		return err
@@ -45,7 +45,7 @@ func (u *unexpectedRecorder) initCheckFailedCsvWriter() error {
 	return nil
 }
 
-func (u *unexpectedRecorder) Flush() {
+func (u *UnexpectedRecorder) Flush() {
 	if u.checkFailedCsvWriter != nil {
 		u.checkFailedCsvWriter.Flush()
 	}
