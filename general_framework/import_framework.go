@@ -138,9 +138,12 @@ func (k *importFramework) parseRawWhole(contents [][]string) (*rawWhole, error) 
 		sectionType := k.recognizer(content)
 
 		// parse the content into models
-		model := k.rowRawModel.getModel()
-		if err := util.FillModelOrder(model, content); err != nil {
-			return nil, err
+		var model any
+		if k.rowRawModel != nil {
+			model = k.rowRawModel.getModel()
+			if err := util.FillModelOrder(model, content); err != nil {
+				return nil, err
+			}
 		}
 
 		rawContents = append(rawContents, &rawContent{
@@ -160,6 +163,13 @@ func (k *importFramework) checkContent(whole *rawWhole) error {
 	var err error
 	var checkFailed bool
 	for i, rc := range whole.rawContents {
+		var terr error
+		if k.control.enableTypeCheck {
+			if terr = k.checkTypeError(rc); terr != nil {
+				checkFailed = true
+			}
+		}
+
 		sectionType := rc.sectionType
 		checker, ok := k.checkers[sectionType]
 		if !ok {
@@ -168,9 +178,9 @@ func (k *importFramework) checkContent(whole *rawWhole) error {
 
 		err = checker.checkValid(rc)
 
-		if err != nil {
+		if err != nil || terr != nil {
 			checkFailed = true
-			if err = k.recorder.RecordCheckError(util.CombineErrors(i, err)); err != nil {
+			if err = k.recorder.RecordCheckError(util.CombineErrors(i, terr, err)); err != nil {
 				return err
 			}
 		}
@@ -180,6 +190,16 @@ func (k *importFramework) checkContent(whole *rawWhole) error {
 		return errContentCheckFailed
 	}
 	return nil
+}
+
+func (k *importFramework) checkTypeError(rc *rawContent) error {
+	// no need to check if the model is nil
+	if k.rowRawModel == nil {
+		return nil
+	}
+
+	// check the type of the model
+	return util.CheckModelOrder(k.rowRawModel.getModel(), rc.content)
 }
 
 func (k *importFramework) importContent(whole *rawWhole) error {

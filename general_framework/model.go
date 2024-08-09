@@ -24,6 +24,8 @@ type importControl struct {
 	startRow int
 	// the end condition of the function
 	ef endFunc
+	// enable type check
+	enableTypeCheck bool
 }
 
 var defaultImportControl = importControl{
