@@ -5,33 +5,33 @@ type ColumnType int
 
 type FieldsOrder int
 
-type optionFunc func(*importFramework)
-type endFunc func(s []string) bool
+type OptionFunc func(*ImportFramework)
+type EndFunc func(s []string) bool
 
 type rawWhole struct {
-	rawContents []*rawContent
+	rawContents []*RawContent
 }
 
-type rawContent struct {
-	row         int
-	sectionType RowType
-	content     []string
-	model       any
+type RawContent struct {
+	Row         int
+	SectionType RowType
+	Content     []string
+	Model       any
 }
 
-type importControl struct {
+type ImportControl struct {
 	// the start row of the content
-	startRow int
+	StartRow int
 	// the end condition of the function
-	ef endFunc
+	Ef EndFunc
 	// enable type check
-	enableTypeCheck bool
+	EnableTypeCheck bool
 	// enable import parallel
-	enableParallel bool
+	EnableParallel bool
 	// the max parallel number
-	maxParallel int
+	MaxParallel int
 }
 
-var defaultImportControl = importControl{
-	startRow: 1,
+var defaultImportControl = ImportControl{
+	StartRow: 1,
 }

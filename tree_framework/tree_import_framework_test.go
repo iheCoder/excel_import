@@ -9,8 +9,8 @@ func TestConstructTree(t *testing.T) {
 		{"a1", "b2", "c2", "d1", "e5"},
 		{"a1", "b2", "c2", "d1", "e7"},
 	}
-	cfg := &treeImportCfg{
-		levelOrder: []int{0, 1, 2, 3, 4},
+	cfg := &TreeImportCfg{
+		LevelOrder: []int{0, 1, 2, 3, 4},
 	}
 	tif := NewTreeImportFramework(nil, cfg, nil)
 

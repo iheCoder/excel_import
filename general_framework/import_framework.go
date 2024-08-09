@@ -14,44 +14,44 @@ var (
 	errContentCheckFailed = errors.New("content check failed")
 )
 
-type importFramework struct {
+type ImportFramework struct {
 	db               *gorm.DB
 	recorder         *util.UnexpectedRecorder
 	checkers         map[RowType]SectionChecker
 	importers        map[RowType]SectionImporter
-	recognizer       sectionRecognizer
+	recognizer       SectionRecognizer
 	postHandlers     map[RowType]SectionPostHandler
 	rowRawModel      excel_import.RowModelFactory
-	control          importControl
+	control          ImportControl
 	progressReporter *util.ProgressReporter
 }
 
-func WithPostHandlers(postHandlers map[RowType]SectionPostHandler) optionFunc {
-	return func(framework *importFramework) {
+func WithPostHandlers(postHandlers map[RowType]SectionPostHandler) OptionFunc {
+	return func(framework *ImportFramework) {
 		framework.postHandlers = postHandlers
 	}
 }
 
-func WithCheckers(checkers map[RowType]SectionChecker) optionFunc {
-	return func(framework *importFramework) {
+func WithCheckers(checkers map[RowType]SectionChecker) OptionFunc {
+	return func(framework *ImportFramework) {
 		framework.checkers = checkers
 	}
 }
 
-func WithControl(control importControl) optionFunc {
-	return func(framework *importFramework) {
+func WithControl(control ImportControl) OptionFunc {
+	return func(framework *ImportFramework) {
 		framework.control = control
 	}
 }
 
-func WithRowRawModel(rrm excel_import.RowModelFactory) optionFunc {
-	return func(framework *importFramework) {
+func WithRowRawModel(rrm excel_import.RowModelFactory) OptionFunc {
+	return func(framework *ImportFramework) {
 		framework.rowRawModel = rrm
 	}
 }
 
-func NewImporterFramework(db *gorm.DB, importers map[RowType]SectionImporter, recognizer sectionRecognizer, options ...optionFunc) *importFramework {
-	ki := &importFramework{
+func NewImporterFramework(db *gorm.DB, importers map[RowType]SectionImporter, recognizer SectionRecognizer, options ...OptionFunc) *ImportFramework {
+	ki := &ImportFramework{
 		db:               db,
 		recorder:         util.NewDefaultUnexpectedRecorder(),
 		importers:        importers,
@@ -67,7 +67,7 @@ func NewImporterFramework(db *gorm.DB, importers map[RowType]SectionImporter, re
 	return ki
 }
 
-func (k *importFramework) Import(path string) error {
+func (k *ImportFramework) Import(path string) error {
 	defer k.recorder.Flush()
 	content, err := k.parseContent(path)
 	if err != nil {
@@ -93,7 +93,7 @@ func (k *importFramework) Import(path string) error {
 	return nil
 }
 
-func (k *importFramework) parseContent(path string) (*rawWhole, error) {
+func (k *ImportFramework) parseContent(path string) (*rawWhole, error) {
 	content, err := util.ReadExcelContent(path)
 	if err != nil {
 		return nil, err
@@ -104,14 +104,14 @@ func (k *importFramework) parseContent(path string) (*rawWhole, error) {
 	return k.parseRawWhole(contents)
 }
 
-func (k *importFramework) preHandleRawContent(contents [][]string) [][]string {
+func (k *ImportFramework) preHandleRawContent(contents [][]string) [][]string {
 	// skip the header default
-	contents = contents[k.control.startRow:]
+	contents = contents[k.control.StartRow:]
 
 	// end row with func
-	if k.control.ef != nil {
+	if k.control.Ef != nil {
 		for i, content := range contents {
-			if k.control.ef(content) {
+			if k.control.Ef(content) {
 				contents = contents[:i]
 				break
 			}
@@ -136,8 +136,8 @@ func (k *importFramework) preHandleRawContent(contents [][]string) [][]string {
 	return contents
 }
 
-func (k *importFramework) parseRawWhole(contents [][]string) (*rawWhole, error) {
-	rawContents := make([]*rawContent, 0, len(contents))
+func (k *ImportFramework) parseRawWhole(contents [][]string) (*rawWhole, error) {
+	rawContents := make([]*RawContent, 0, len(contents))
 	for i, content := range contents {
 		// recognize the section type
 		sectionType := k.recognizer(content)
@@ -151,11 +151,11 @@ func (k *importFramework) parseRawWhole(contents [][]string) (*rawWhole, error) 
 			}
 		}
 
-		rawContents = append(rawContents, &rawContent{
-			sectionType: sectionType,
-			content:     content,
-			model:       model,
-			row:         i + k.control.startRow,
+		rawContents = append(rawContents, &RawContent{
+			SectionType: sectionType,
+			Content:     content,
+			Model:       model,
+			Row:         i + k.control.StartRow,
 		})
 	}
 
@@ -164,18 +164,18 @@ func (k *importFramework) parseRawWhole(contents [][]string) (*rawWhole, error) 
 	}, nil
 }
 
-func (k *importFramework) checkContent(whole *rawWhole) error {
+func (k *ImportFramework) checkContent(whole *rawWhole) error {
 	var err error
 	var checkFailed bool
 	for i, rc := range whole.rawContents {
 		var terr error
-		if k.control.enableTypeCheck {
+		if k.control.EnableTypeCheck {
 			if terr = k.checkTypeError(rc); terr != nil {
 				checkFailed = true
 			}
 		}
 
-		sectionType := rc.sectionType
+		sectionType := rc.SectionType
 		checker, ok := k.checkers[sectionType]
 		if !ok {
 			continue
@@ -197,17 +197,17 @@ func (k *importFramework) checkContent(whole *rawWhole) error {
 	return nil
 }
 
-func (k *importFramework) checkTypeError(rc *rawContent) error {
+func (k *ImportFramework) checkTypeError(rc *RawContent) error {
 	// no need to check if the model is nil
 	if k.rowRawModel == nil {
 		return nil
 	}
 
 	// check the type of the model
-	return util.CheckModelOrder(k.rowRawModel.GetModel(), rc.content)
+	return util.CheckModelOrder(k.rowRawModel.GetModel(), rc.Content)
 }
 
-func (k *importFramework) importContent(whole *rawWhole) error {
+func (k *ImportFramework) importContent(whole *rawWhole) error {
 	k.progressReporter.StartProgress(len(whole.rawContents))
 
 	if k.checkAllowImportParallel() {
@@ -217,16 +217,16 @@ func (k *importFramework) importContent(whole *rawWhole) error {
 	return k.importContentSerial(whole)
 }
 
-func (k *importFramework) importContentParallel(whole *rawWhole) error {
-	maxParallel := k.control.maxParallel
+func (k *ImportFramework) importContentParallel(whole *rawWhole) error {
+	maxParallel := k.control.MaxParallel
 	eg, _ := errgroup.WithContext(context.Background())
 	eg.SetLimit(maxParallel)
 
 	for _, content := range whole.rawContents {
-		sectionType := content.sectionType
+		sectionType := content.SectionType
 		importer, ok := k.importers[sectionType]
 		if !ok {
-			fmt.Printf("importer not found for section type: %s, content: %s \n", sectionType, content.content)
+			fmt.Printf("importer not found for section type: %s, content: %s \n", sectionType, content.Content)
 			continue
 		}
 
@@ -247,12 +247,12 @@ func (k *importFramework) importContentParallel(whole *rawWhole) error {
 	return nil
 }
 
-func (k *importFramework) importContentSerial(whole *rawWhole) error {
+func (k *ImportFramework) importContentSerial(whole *rawWhole) error {
 	for _, content := range whole.rawContents {
-		sectionType := content.sectionType
+		sectionType := content.SectionType
 		importer, ok := k.importers[sectionType]
 		if !ok {
-			fmt.Printf("importer not found for section type: %s, content: %s \n", sectionType, content.content)
+			fmt.Printf("importer not found for section type: %s, content: %s \n", sectionType, content.Content)
 			continue
 		}
 
@@ -264,25 +264,25 @@ func (k *importFramework) importContentSerial(whole *rawWhole) error {
 	return nil
 }
 
-func (k *importFramework) importSection(importer SectionImporter, content *rawContent) error {
+func (k *ImportFramework) importSection(importer SectionImporter, content *RawContent) error {
 	status := util.ProgressStatusSuccess
 	defer k.progressReporter.CommitProgress(1, status)
 
 	if err := importer.importSection(k.db, content); err != nil {
 		status = util.ProgressStatusFailed
-		fmt.Printf("import row %d section failed: %v\n", content.row, err)
-		k.recorder.RecordImportError(util.CombineErrors(content.row, err))
+		fmt.Printf("import row %d section failed: %v\n", content.Row, err)
+		k.recorder.RecordImportError(util.CombineErrors(content.Row, err))
 		return err
 	}
 
 	return nil
 }
 
-func (k *importFramework) checkAllowImportParallel() bool {
-	return k.control.enableParallel && k.control.maxParallel > 1
+func (k *ImportFramework) checkAllowImportParallel() bool {
+	return k.control.EnableParallel && k.control.MaxParallel > 1
 }
 
-func (k *importFramework) postHandle() error {
+func (k *ImportFramework) postHandle() error {
 	for _, handler := range k.postHandlers {
 		if err := handler.postHandle(k.db); err != nil {
 			return err

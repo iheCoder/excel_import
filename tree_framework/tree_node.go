@@ -38,6 +38,18 @@ func (t *TreeNode) GetItem() any {
 	return t.item
 }
 
+func (t *TreeNode) GetValue() string {
+	return t.value
+}
+
+func (t *TreeNode) GetParent() *TreeNode {
+	return t.parent
+}
+
+func (t *TreeNode) GetChildren() []*TreeNode {
+	return t.children
+}
+
 func (t *TreeNode) CheckIsLeaf() bool {
 	return len(t.children) == 0
 }
@@ -53,22 +65,22 @@ func constructLevelNode(s string, parent *TreeNode, level int, row int) *TreeNod
 	return node
 }
 
-type treeImportCfg struct {
-	levelOrder []int
-	// the boundary of the tree node
-	boundary int
+type TreeImportCfg struct {
+	LevelOrder []int
+	// the Boundary of the tree node
+	Boundary int
 	// the model factory
-	modelFac excel_import.RowModelFactory
+	ModelFac excel_import.RowModelFactory
 }
 
 type treeImportOptionalCfg struct {
-	genKeyFunc generateNodeKey
+	genKeyFunc GenerateNodeKey
 	// the start row of the content
 	startRow int
 	// the end condition of the function
-	ef rowEndFunc
+	ef RowEndFunc
 	// the end condition of the column
-	cf colEndFunc
+	cf ColEndFunc
 }
 
 func genNodeKey(s []string, level int) string {

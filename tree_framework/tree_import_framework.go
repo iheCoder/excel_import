@@ -6,21 +6,21 @@ import (
 	"gorm.io/gorm"
 )
 
-type treeImportFramework struct {
+type TreeImportFramework struct {
 	db            *gorm.DB
 	recorder      *util.UnexpectedRecorder
-	cfg           *treeImportCfg
+	cfg           *TreeImportCfg
 	nodes         map[string]*TreeNode
 	levelImporter []LevelImporter
 	ocfg          *treeImportOptionalCfg
 }
 
-func NewTreeImportFramework(db *gorm.DB, cfg *treeImportCfg, levelImporter []LevelImporter, options ...optionFunc) *treeImportFramework {
+func NewTreeImportFramework(db *gorm.DB, cfg *TreeImportCfg, levelImporter []LevelImporter, options ...OptionFunc) *TreeImportFramework {
 	if cfg == nil {
 		panic("cfg should not nil")
 	}
 
-	tif := &treeImportFramework{
+	tif := &TreeImportFramework{
 		db:            db,
 		cfg:           cfg,
 		nodes:         make(map[string]*TreeNode),
@@ -32,38 +32,38 @@ func NewTreeImportFramework(db *gorm.DB, cfg *treeImportCfg, levelImporter []Lev
 		option(tif)
 	}
 
-	if tif.cfg.modelFac == nil {
+	if tif.cfg.ModelFac == nil {
 		panic("model factory should not nil")
 	}
 
 	return tif
 }
 
-func WithGenKeyFunc(gkf generateNodeKey) optionFunc {
-	return func(framework *treeImportFramework) {
+func WithGenKeyFunc(gkf GenerateNodeKey) OptionFunc {
+	return func(framework *TreeImportFramework) {
 		framework.ocfg.genKeyFunc = gkf
 	}
 }
 
-func WithStartRow(sr int) optionFunc {
-	return func(framework *treeImportFramework) {
+func WithStartRow(sr int) OptionFunc {
+	return func(framework *TreeImportFramework) {
 		framework.ocfg.startRow = sr
 	}
 }
 
-func WithEndFunc(ef rowEndFunc) optionFunc {
-	return func(framework *treeImportFramework) {
+func WithEndFunc(ef RowEndFunc) OptionFunc {
+	return func(framework *TreeImportFramework) {
 		framework.ocfg.ef = ef
 	}
 }
 
-func WithColEndFunc(cf colEndFunc) optionFunc {
-	return func(framework *treeImportFramework) {
+func WithColEndFunc(cf ColEndFunc) OptionFunc {
+	return func(framework *TreeImportFramework) {
 		framework.ocfg.cf = cf
 	}
 }
 
-func (t *treeImportFramework) parseRawWhole(content [][]string) (*rawCellWhole, error) {
+func (t *TreeImportFramework) parseRawWhole(content [][]string) (*rawCellWhole, error) {
 	// construct the tree
 	root, err := t.constructTree(content)
 	if err != nil {
@@ -81,8 +81,8 @@ func (t *treeImportFramework) parseRawWhole(content [][]string) (*rawCellWhole, 
 
 		// parse the content into models
 		var model any
-		if t.cfg.modelFac != nil {
-			model = t.cfg.modelFac.GetModel()
+		if t.cfg.ModelFac != nil {
+			model = t.cfg.ModelFac.GetModel()
 			if err := util.FillModelOrder(model, row); err != nil {
 				return nil, err
 			}
@@ -100,7 +100,7 @@ func (t *treeImportFramework) parseRawWhole(content [][]string) (*rawCellWhole, 
 	}, nil
 }
 
-func (t *treeImportFramework) fillModelIntoLeafNode(root *TreeNode, models []any) {
+func (t *TreeImportFramework) fillModelIntoLeafNode(root *TreeNode, models []any) {
 	if root == nil {
 		return
 	}
@@ -115,8 +115,8 @@ func (t *treeImportFramework) fillModelIntoLeafNode(root *TreeNode, models []any
 	}
 }
 
-func (t *treeImportFramework) checkIsLeaf(i int, row []string) bool {
-	if i == t.cfg.boundary {
+func (t *TreeImportFramework) checkIsLeaf(i int, row []string) bool {
+	if i == t.cfg.Boundary {
 		return true
 	}
 
@@ -127,7 +127,7 @@ func (t *treeImportFramework) checkIsLeaf(i int, row []string) bool {
 	return t.ocfg.cf(next)
 }
 
-func (t *treeImportFramework) importTree(whole *rawCellWhole) error {
+func (t *TreeImportFramework) importTree(whole *rawCellWhole) error {
 	root := whole.root
 
 	// import the tree
@@ -147,9 +147,9 @@ func (t *treeImportFramework) importTree(whole *rawCellWhole) error {
 	return nil
 }
 
-func (t *treeImportFramework) constructTree(rcContents [][]string) (*TreeNode, error) {
+func (t *TreeImportFramework) constructTree(rcContents [][]string) (*TreeNode, error) {
 	// remove the column which is not belongs to the tree
-	rcContents = rcContents[:t.cfg.boundary+1]
+	rcContents = rcContents[:t.cfg.Boundary+1]
 
 	// reverse the matrix
 	contents := reverseMatrix(rcContents)
@@ -157,7 +157,7 @@ func (t *treeImportFramework) constructTree(rcContents [][]string) (*TreeNode, e
 	// construct the tree
 	root := &TreeNode{}
 	parent := root
-	for level, i := range t.cfg.levelOrder {
+	for level, i := range t.cfg.LevelOrder {
 		for j, s := range contents[i] {
 			// if current node has been constructed, skip it
 			curKey := t.ocfg.genKeyFunc(rcContents[j][:i+1], level+1)
@@ -167,7 +167,7 @@ func (t *treeImportFramework) constructTree(rcContents [][]string) (*TreeNode, e
 
 			// find the parent node
 			if level > 0 {
-				porder := t.cfg.levelOrder[level-1]
+				porder := t.cfg.LevelOrder[level-1]
 				parent = t.findParent(rcContents[j][:porder+1], level)
 			}
 			if parent == nil {
@@ -183,7 +183,7 @@ func (t *treeImportFramework) constructTree(rcContents [][]string) (*TreeNode, e
 	return root, nil
 }
 
-func (t *treeImportFramework) findParent(s []string, level int) *TreeNode {
+func (t *TreeImportFramework) findParent(s []string, level int) *TreeNode {
 	key := t.ocfg.genKeyFunc(s, level)
 	if node, ok := t.nodes[key]; ok {
 		return node
