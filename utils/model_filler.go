@@ -108,13 +108,10 @@ func FillModel(model interface{}, values []string, fieldOrders []int) error {
 
 	// 检查字段数量是否匹配
 	n := v.NumField()
-	if n != len(fieldOrders) {
-		return errors.New("field count does not match")
-	}
 
 	// 检查字段顺序是否正确
 	for _, order := range fieldOrders {
-		if order < 0 || order >= n || order >= len(values) {
+		if order < 0 || order >= len(values) {
 			return errors.New("field order is out of range")
 		}
 	}

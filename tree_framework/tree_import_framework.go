@@ -19,6 +19,15 @@ func NewTreeImportFramework(db *gorm.DB, cfg *TreeImportCfg, levelImporter []Lev
 	if cfg == nil {
 		panic("cfg should not nil")
 	}
+	if len(cfg.LevelOrder) == 0 {
+		panic("level order should not empty")
+	}
+	if len(levelImporter) == 0 {
+		panic("level importer should not empty")
+	}
+	if len(levelImporter) != len(cfg.LevelOrder) {
+		panic("level importer should be equal to level order")
+	}
 
 	tif := &TreeImportFramework{
 		db:            db,
@@ -26,6 +35,7 @@ func NewTreeImportFramework(db *gorm.DB, cfg *TreeImportCfg, levelImporter []Lev
 		nodes:         make(map[string]*TreeNode),
 		levelImporter: levelImporter,
 		ocfg:          defaultOptCfg,
+		recorder:      util.NewDefaultUnexpectedRecorder(),
 	}
 
 	for _, option := range options {
@@ -33,7 +43,7 @@ func NewTreeImportFramework(db *gorm.DB, cfg *TreeImportCfg, levelImporter []Lev
 	}
 
 	if tif.cfg.ModelFac == nil {
-		panic("model factory should not nil")
+		panic("rawModel factory should not nil")
 	}
 
 	return tif
@@ -114,8 +124,8 @@ func (t *TreeImportFramework) preHandleRawContent(contents [][]string) [][]strin
 	// format the content
 	for i, row := range contents {
 		// if the content is less than the min column count, complete it with empty string
-		if len(row) < t.cfg.Boundary {
-			row = append(row, make([]string, t.cfg.Boundary-len(row))...)
+		if len(row) < t.cfg.TreeBoundary {
+			row = append(row, make([]string, t.cfg.TreeBoundary-len(row))...)
 		}
 
 		// format the cell
@@ -149,14 +159,14 @@ func (t *TreeImportFramework) parseRawWhole(content [][]string) (*rawCellWhole, 
 		var model any
 		if t.cfg.ModelFac != nil {
 			model = t.cfg.ModelFac.GetModel()
-			if err := util.FillModelOrder(model, row); err != nil {
+			if err = util.FillModelOrder(model, row); err != nil {
 				return nil, err
 			}
 		}
 		models[i] = model
 	}
 
-	// fill the model into the leaf tree node
+	// fill the rawModel into the leaf tree node
 	t.fillModelIntoLeafNode(root, models)
 
 	return &rawCellWhole{
@@ -182,7 +192,7 @@ func (t *TreeImportFramework) fillModelIntoLeafNode(root *TreeNode, models []any
 }
 
 func (t *TreeImportFramework) checkIsLeaf(i int, row []string) bool {
-	if i == t.cfg.Boundary {
+	if i == t.cfg.TreeBoundary {
 		return true
 	}
 
@@ -215,7 +225,7 @@ func (t *TreeImportFramework) importTree(whole *rawCellWhole) error {
 
 func (t *TreeImportFramework) constructTree(rcContents [][]string) (*TreeNode, error) {
 	// remove the column which is not belongs to the tree
-	rcContents = rcContents[:t.cfg.Boundary+1]
+	rcContents = rcContents[:t.cfg.TreeBoundary+1]
 
 	// reverse the matrix
 	contents := reverseMatrix(rcContents)
@@ -225,6 +235,10 @@ func (t *TreeImportFramework) constructTree(rcContents [][]string) (*TreeNode, e
 	parent := root
 	for level, i := range t.cfg.LevelOrder {
 		for j, s := range contents[i] {
+			if len(s) == 0 {
+				continue
+			}
+
 			// if current node has been constructed, skip it
 			curKey := t.ocfg.genKeyFunc(rcContents[j][:i+1], level+1)
 			if _, ok := t.nodes[curKey]; ok {
