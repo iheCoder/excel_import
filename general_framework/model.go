@@ -26,6 +26,10 @@ type importControl struct {
 	ef endFunc
 	// enable type check
 	enableTypeCheck bool
+	// enable import parallel
+	enableParallel bool
+	// the max parallel number
+	maxParallel int
 }
 
 var defaultImportControl = importControl{

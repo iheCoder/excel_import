@@ -1,9 +1,11 @@
 package general_framework
 
 import (
+	"context"
 	"errors"
 	"excel_import/utils"
 	"fmt"
+	"golang.org/x/sync/errgroup"
 	"gorm.io/gorm"
 )
 
@@ -203,6 +205,39 @@ func (k *importFramework) checkTypeError(rc *rawContent) error {
 }
 
 func (k *importFramework) importContent(whole *rawWhole) error {
+	if k.checkAllowImportParallel() {
+		return k.importContentParallel(whole)
+	}
+
+	return k.importContentSerial(whole)
+}
+
+func (k *importFramework) importContentParallel(whole *rawWhole) error {
+	maxParallel := k.control.maxParallel
+	eg, _ := errgroup.WithContext(context.Background())
+	eg.SetLimit(maxParallel)
+
+	for _, content := range whole.rawContents {
+		sectionType := content.sectionType
+		importer, ok := k.importers[sectionType]
+		if !ok {
+			fmt.Printf("importer not found for section type: %s, content: %s \n", sectionType, content.content)
+			continue
+		}
+
+		eg.Go(func() error {
+			return importer.importSection(k.db, content)
+		})
+	}
+
+	if err := eg.Wait(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (k *importFramework) importContentSerial(whole *rawWhole) error {
 	for _, content := range whole.rawContents {
 		sectionType := content.sectionType
 		importer, ok := k.importers[sectionType]
@@ -218,6 +253,10 @@ func (k *importFramework) importContent(whole *rawWhole) error {
 	}
 
 	return nil
+}
+
+func (k *importFramework) checkAllowImportParallel() bool {
+	return k.control.enableParallel && k.control.maxParallel > 1
 }
 
 func (k *importFramework) postHandle() error {
