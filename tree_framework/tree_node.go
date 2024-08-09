@@ -19,23 +19,27 @@ type rawCellContent struct {
 type rawCellWhole struct {
 	contents     [][]string
 	cellContents [][]rawCellContent
-	root         *treeNode
+	root         *TreeNode
 }
 
-type treeNode struct {
+type TreeNode struct {
 	value    string
-	parent   *treeNode
+	parent   *TreeNode
 	rank     int
-	children []*treeNode
+	children []*TreeNode
 	item     any
 }
 
-func (t *treeNode) CheckIsLeaf() bool {
+func (t *TreeNode) GetItem() any {
+	return t.item
+}
+
+func (t *TreeNode) CheckIsLeaf() bool {
 	return len(t.children) == 0
 }
 
-func constructLevelNode(s string, parent *treeNode, level int) *treeNode {
-	node := &treeNode{
+func constructLevelNode(s string, parent *TreeNode, level int) *TreeNode {
+	node := &TreeNode{
 		value:  s,
 		parent: parent,
 		rank:   level,

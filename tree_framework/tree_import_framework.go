@@ -10,7 +10,7 @@ type treeImportFramework struct {
 	db            *gorm.DB
 	recorder      *util.UnexpectedRecorder
 	cfg           *treeImportCfg
-	nodes         map[string]*treeNode
+	nodes         map[string]*TreeNode
 	levelImporter []LevelImporter
 	ocfg          *treeImportOptionalCfg
 }
@@ -23,7 +23,7 @@ func NewTreeImportFramework(db *gorm.DB, cfg *treeImportCfg, levelImporter []Lev
 	tif := &treeImportFramework{
 		db:            db,
 		cfg:           cfg,
-		nodes:         make(map[string]*treeNode),
+		nodes:         make(map[string]*TreeNode),
 		levelImporter: levelImporter,
 		ocfg:          defaultOptCfg,
 	}
@@ -89,7 +89,7 @@ func (t *treeImportFramework) importTree(whole *rawCellWhole) error {
 	// import the tree
 	children := root.children
 	for _, importer := range t.levelImporter {
-		nextChildren := make([]*treeNode, 0)
+		nextChildren := make([]*TreeNode, 0)
 		for _, child := range children {
 			if err := importer.ImportLevelNode(t.db, child); err != nil {
 				return err
@@ -103,7 +103,7 @@ func (t *treeImportFramework) importTree(whole *rawCellWhole) error {
 	return nil
 }
 
-func (t *treeImportFramework) constructTree(rcContents [][]string) (*treeNode, error) {
+func (t *treeImportFramework) constructTree(rcContents [][]string) (*TreeNode, error) {
 	// remove the column which is not belongs to the tree
 	rcContents = rcContents[:t.cfg.boundary+1]
 
@@ -111,7 +111,7 @@ func (t *treeImportFramework) constructTree(rcContents [][]string) (*treeNode, e
 	contents := reverseMatrix(rcContents)
 
 	// construct the tree
-	root := &treeNode{}
+	root := &TreeNode{}
 	parent := root
 	for level, i := range t.cfg.levelOrder {
 		for j, s := range contents[i] {
@@ -137,7 +137,7 @@ func (t *treeImportFramework) constructTree(rcContents [][]string) (*treeNode, e
 	return root, nil
 }
 
-func (t *treeImportFramework) findParent(s []string, level int) *treeNode {
+func (t *treeImportFramework) findParent(s []string, level int) *TreeNode {
 	key := t.ocfg.genKeyFunc(s, level)
 	if node, ok := t.nodes[key]; ok {
 		return node
