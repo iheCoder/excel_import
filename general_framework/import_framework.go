@@ -264,9 +264,11 @@ func (k *importFramework) importContentSerial(whole *rawWhole) error {
 }
 
 func (k *importFramework) importSection(importer SectionImporter, content *rawContent) error {
-	defer k.progressReporter.CommitProgress(1)
+	status := util.ProgressStatusSuccess
+	defer k.progressReporter.CommitProgress(1, status)
 
 	if err := importer.importSection(k.db, content); err != nil {
+		status = util.ProgressStatusFailed
 		fmt.Printf("import row %d section failed: %v\n", content.row, err)
 		k.recorder.RecordImportError(util.CombineErrors(content.row, err))
 		return err

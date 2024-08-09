@@ -7,10 +7,14 @@ import (
 )
 
 type ProgressMode int
+type ProgressStatus int
 
 const (
 	ProgressModeNormal ProgressMode = iota
 	ProgressModeDynamic
+
+	ProgressStatusSuccess ProgressStatus = 1
+	ProgressStatusFailed  ProgressStatus = 2
 )
 
 type ProgressReporter struct {
@@ -20,6 +24,12 @@ type ProgressReporter struct {
 	mu                   *sync.Mutex
 	mode                 ProgressMode
 	totalChangeCompleted bool
+	detail               progressDetail
+}
+
+type progressDetail struct {
+	success int
+	failed  int
 }
 
 func NewProgressReporter(enable bool) *ProgressReporter {
@@ -49,13 +59,20 @@ func (p *ProgressReporter) SetProgressMode(mode ProgressMode) {
 }
 
 // CommitProgress commit progress
-func (p *ProgressReporter) CommitProgress(delta int) {
+func (p *ProgressReporter) CommitProgress(delta int, status ProgressStatus) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
+	switch status {
+	case ProgressStatusSuccess:
+		p.detail.success += delta
+	case ProgressStatusFailed:
+		p.detail.failed += delta
+	}
+
 	p.progress += delta
 	if p.enable {
-		fmt.Printf("\rProgress: %d/%d, Cost: %v \n", p.progress, p.total, time.Since(p.startTime))
+		fmt.Printf("\rProgress: %d/%d, Cost: %v ms \n", p.progress, p.total, time.Since(p.startTime).Milliseconds())
 	}
 }
 
@@ -89,4 +106,18 @@ func (p *ProgressReporter) CheckProgressCompleted() bool {
 	}
 
 	return p.progress >= p.total
+}
+
+// Report report progress info after completed
+func (p *ProgressReporter) Report() {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	if !p.enable {
+		return
+	}
+
+	totalCost := time.Since(p.startTime).Milliseconds()
+	averageCost := totalCost / int64(p.total)
+	fmt.Printf("Complete Progress: %d/%d, Cost: %v ms, Average Cost: %v ms, Success: %d, Failed: %d \n", p.progress, p.total, totalCost, averageCost, p.detail.success, p.detail.failed)
 }
