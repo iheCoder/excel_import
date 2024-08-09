@@ -19,6 +19,7 @@ type rawCellContent struct {
 type rawCellWhole struct {
 	contents     [][]string
 	cellContents [][]rawCellContent
+	root         *treeNode
 }
 
 type treeNode struct {
@@ -27,6 +28,10 @@ type treeNode struct {
 	rank     int
 	children []*treeNode
 	item     any
+}
+
+func (t *treeNode) CheckIsLeaf() bool {
+	return len(t.children) == 0
 }
 
 func constructLevelNode(s string, parent *treeNode, level int) *treeNode {

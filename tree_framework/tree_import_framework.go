@@ -83,17 +83,15 @@ func (t *treeImportFramework) checkIsLeaf(i int, row []string) bool {
 	return t.ocfg.cf(next)
 }
 
-func (t *treeImportFramework) importTree(contents [][]string) error {
-	root, err := t.constructTree(contents)
-	if err != nil {
-		return err
-	}
+func (t *treeImportFramework) importTree(whole *rawCellWhole) error {
+	root := whole.root
 
+	// import the tree
 	children := root.children
 	for _, importer := range t.levelImporter {
 		nextChildren := make([]*treeNode, 0)
 		for _, child := range children {
-			if err = importer.ImportLevelNode(t.db, child); err != nil {
+			if err := importer.ImportLevelNode(t.db, child); err != nil {
 				return err
 			}
 			nextChildren = append(nextChildren, child.children...)
@@ -106,6 +104,9 @@ func (t *treeImportFramework) importTree(contents [][]string) error {
 }
 
 func (t *treeImportFramework) constructTree(rcContents [][]string) (*treeNode, error) {
+	// remove the column which is not belongs to the tree
+	rcContents = rcContents[:t.cfg.boundary+1]
+
 	// reverse the matrix
 	contents := reverseMatrix(rcContents)
 
