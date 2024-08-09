@@ -124,20 +124,22 @@ func (t *treeImportFramework) constructTree(rcContents [][]string) (*TreeNode, e
 	parent := root
 	for level, i := range t.cfg.levelOrder {
 		for j, s := range contents[i] {
+			// if current node has been constructed, skip it
 			curKey := t.ocfg.genKeyFunc(rcContents[j][:i+1], level+1)
 			if _, ok := t.nodes[curKey]; ok {
 				continue
 			}
 
+			// find the parent node
 			if level > 0 {
 				porder := t.cfg.levelOrder[level-1]
 				parent = t.findParent(rcContents[j][:porder+1], level)
 			}
-
 			if parent == nil {
 				return nil, fmt.Errorf("parent not found for %s", s)
 			}
 
+			// construct the node
 			node := constructLevelNode(s, parent, level+1)
 			t.nodes[curKey] = node
 		}

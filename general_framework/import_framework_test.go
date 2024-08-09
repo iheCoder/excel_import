@@ -44,11 +44,11 @@ func (di *simpleTestDataImporter) importSection(tx *gorm.DB, s *rawContent) erro
 	return nil
 }
 
-func (di *simpleTestDataImporter) minColumnCount() int {
+func (di *simpleTestDataImporter) MinColumnCount() int {
 	return 2
 }
 
-func (di *simpleTestDataImporter) getModel() any {
+func (di *simpleTestDataImporter) GetModel() any {
 	return &Person{}
 }
 

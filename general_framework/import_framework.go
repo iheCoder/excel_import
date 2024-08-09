@@ -3,6 +3,7 @@ package general_framework
 import (
 	"context"
 	"errors"
+	"excel_import"
 	"excel_import/utils"
 	"fmt"
 	"golang.org/x/sync/errgroup"
@@ -20,7 +21,7 @@ type importFramework struct {
 	importers        map[RowType]SectionImporter
 	recognizer       sectionRecognizer
 	postHandlers     map[RowType]SectionPostHandler
-	rowRawModel      RowModelFactory
+	rowRawModel      excel_import.RowModelFactory
 	control          importControl
 	progressReporter *util.ProgressReporter
 }
@@ -43,7 +44,7 @@ func WithControl(control importControl) optionFunc {
 	}
 }
 
-func WithRowRawModel(rrm RowModelFactory) optionFunc {
+func WithRowRawModel(rrm excel_import.RowModelFactory) optionFunc {
 	return func(framework *importFramework) {
 		framework.rowRawModel = rrm
 	}
@@ -120,8 +121,8 @@ func (k *importFramework) preHandleRawContent(contents [][]string) [][]string {
 	// format the content
 	for i, content := range contents {
 		// if the content is less than the min column count, complete it with empty string
-		if len(content) < k.rowRawModel.minColumnCount() {
-			content = append(content, make([]string, k.rowRawModel.minColumnCount()-len(content))...)
+		if len(content) < k.rowRawModel.MinColumnCount() {
+			content = append(content, make([]string, k.rowRawModel.MinColumnCount()-len(content))...)
 		}
 
 		// format the cell
@@ -144,7 +145,7 @@ func (k *importFramework) parseRawWhole(contents [][]string) (*rawWhole, error) 
 		// parse the content into models
 		var model any
 		if k.rowRawModel != nil {
-			model = k.rowRawModel.getModel()
+			model = k.rowRawModel.GetModel()
 			if err := util.FillModelOrder(model, content); err != nil {
 				return nil, err
 			}
@@ -203,7 +204,7 @@ func (k *importFramework) checkTypeError(rc *rawContent) error {
 	}
 
 	// check the type of the model
-	return util.CheckModelOrder(k.rowRawModel.getModel(), rc.content)
+	return util.CheckModelOrder(k.rowRawModel.GetModel(), rc.content)
 }
 
 func (k *importFramework) importContent(whole *rawWhole) error {

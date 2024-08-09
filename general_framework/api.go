@@ -18,12 +18,5 @@ type SectionPostHandler interface {
 	postHandle(tx *gorm.DB) error
 }
 
-type RowModelFactory interface {
-	// the min row count to construct raw model
-	minColumnCount() int
-	// get the model
-	getModel() any
-}
-
 // used for recognize row section
 type sectionRecognizer func(s []string) RowType
