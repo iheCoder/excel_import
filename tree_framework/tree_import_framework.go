@@ -32,6 +32,10 @@ func NewTreeImportFramework(db *gorm.DB, cfg *treeImportCfg, levelImporter []Lev
 		option(tif)
 	}
 
+	if tif.cfg.modelFac == nil {
+		panic("model factory should not nil")
+	}
+
 	return tif
 }
 
@@ -62,12 +66,23 @@ func WithColEndFunc(cf colEndFunc) optionFunc {
 func (t *treeImportFramework) parseRawWhole(content [][]string) (*rawCellWhole, error) {
 	cellContents := make([][]rawCellContent, len(content))
 	for i, row := range content {
+		// parse the cell content
 		cellContents[i] = make([]rawCellContent, len(row))
 		for j, cell := range row {
 			cellContents[i][j] = rawCellContent{val: cell, isLeaf: t.checkIsLeaf(i, row)}
 		}
+
+		// parse the content into models
+		var model any
+		if t.cfg.modelFac != nil {
+			model = t.cfg.modelFac.GetModel()
+			if err := util.FillModelOrder(model, row); err != nil {
+				return nil, err
+			}
+		}
 	}
 
+	// construct the tree
 	root, err := t.constructTree(content)
 	if err != nil {
 		return nil, err

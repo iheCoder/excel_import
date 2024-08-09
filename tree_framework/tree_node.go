@@ -1,6 +1,9 @@
 package tree_framework
 
-import "fmt"
+import (
+	"excel_import"
+	"fmt"
+)
 
 var (
 	defaultKeyGen = genNodeKey
@@ -52,6 +55,8 @@ type treeImportCfg struct {
 	levelOrder []int
 	// the boundary of the tree node
 	boundary int
+	// the model factory
+	modelFac excel_import.RowModelFactory
 }
 
 type treeImportOptionalCfg struct {
