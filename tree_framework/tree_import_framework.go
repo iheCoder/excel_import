@@ -63,6 +63,24 @@ func WithColEndFunc(cf ColEndFunc) OptionFunc {
 	}
 }
 
+func (t *TreeImportFramework) Import(path string) error {
+	defer t.recorder.Flush()
+
+	whole, err := t.parseContent(path)
+	if err != nil {
+		fmt.Printf("parse file content failed: %v\n", err)
+		return err
+	}
+
+	err = t.importTree(whole)
+	if err != nil {
+		fmt.Printf("import tree failed: %v\n", err)
+		return err
+	}
+
+	return nil
+}
+
 func (t *TreeImportFramework) parseContent(path string) (*rawCellWhole, error) {
 	// read the excel content
 	content, err := util.ReadExcelContent(path)
