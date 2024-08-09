@@ -198,9 +198,11 @@ func DivideExcelContent(path string, rowLimit int) ([]string, error) {
 		return []string{path}, nil
 	}
 
+	header := records[0]
+
 	var filePaths []string
-	for i := 0; i < len(records); i += rowLimit {
-		subRecords := records[i:min(i+rowLimit, len(records))]
+	for i := 1; i < len(records); i += rowLimit {
+		subRecords := append([][]string{header}, records[i:i+rowLimit]...)
 		subPath := strings.TrimSuffix(path, filepath.Ext(path)) + fmt.Sprintf("_%d", i) + filepath.Ext(path)
 
 		if err = WriteExcelContent(subPath, subRecords); err != nil {
