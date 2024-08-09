@@ -63,6 +63,54 @@ func WithColEndFunc(cf ColEndFunc) OptionFunc {
 	}
 }
 
+func (t *TreeImportFramework) parseContent(path string) (*rawCellWhole, error) {
+	// read the excel content
+	content, err := util.ReadExcelContent(path)
+	if err != nil {
+		return nil, err
+	}
+
+	// pre handle the raw content
+	content = t.preHandleRawContent(content)
+
+	// parse the raw content
+	return t.parseRawWhole(content)
+}
+
+func (t *TreeImportFramework) preHandleRawContent(contents [][]string) [][]string {
+	// skip the header default
+	if t.ocfg.startRow > 0 {
+		contents = contents[t.ocfg.startRow:]
+	}
+
+	// end row with func
+	if t.ocfg.ef != nil {
+		for i, row := range contents {
+			if t.ocfg.ef(row) {
+				contents = contents[:i]
+				break
+			}
+		}
+	}
+
+	// format the content
+	for i, row := range contents {
+		// if the content is less than the min column count, complete it with empty string
+		if len(row) < t.cfg.Boundary {
+			row = append(row, make([]string, t.cfg.Boundary-len(row))...)
+		}
+
+		// format the cell
+		for j, cell := range row {
+			row[j] = util.FormatCell(cell)
+		}
+
+		contents[i] = row
+	}
+
+	return contents
+}
+
 func (t *TreeImportFramework) parseRawWhole(content [][]string) (*rawCellWhole, error) {
 	// construct the tree
 	root, err := t.constructTree(content)
