@@ -225,8 +225,14 @@ func (k *importFramework) importContentParallel(whole *rawWhole) error {
 			continue
 		}
 
+		gcontent := content
 		eg.Go(func() error {
-			return importer.importSection(k.db, content)
+			if err := importer.importSection(k.db, gcontent); err != nil {
+				k.recorder.RecordImportError(util.CombineErrors(gcontent.row, err))
+				return err
+			}
+
+			return nil
 		})
 	}
 
