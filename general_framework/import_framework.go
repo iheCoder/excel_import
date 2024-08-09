@@ -93,24 +93,47 @@ func (k *importFramework) parseContent(path string) (*rawWhole, error) {
 	if err != nil {
 		return nil, err
 	}
-	// skip the header default
-	content = content[k.control.startRow:]
 
-	return k.parseRawWhole(content)
+	contents := k.preHandleRawContent(content)
+
+	return k.parseRawWhole(contents)
 }
 
-func (k *importFramework) parseRawWhole(contents [][]string) (*rawWhole, error) {
-	rawContents := make([]*rawContent, 0, len(contents))
-	for i, content := range contents {
-		if k.control.ef != nil && k.control.ef(content) {
-			break
-		}
+func (k *importFramework) preHandleRawContent(contents [][]string) [][]string {
+	// skip the header default
+	contents = contents[k.control.startRow:]
 
+	// end row with func
+	if k.control.ef != nil {
+		for i, content := range contents {
+			if k.control.ef(content) {
+				contents = contents[:i]
+				break
+			}
+		}
+	}
+
+	// format the content
+	for i, content := range contents {
 		// if the content is less than the min column count, complete it with empty string
 		if len(content) < k.rowRawModel.minColumnCount() {
 			content = append(content, make([]string, k.rowRawModel.minColumnCount()-len(content))...)
 		}
 
+		// format the cell
+		for j, cell := range content {
+			content[j] = util.FormatCell(cell)
+		}
+
+		contents[i] = content
+	}
+
+	return contents
+}
+
+func (k *importFramework) parseRawWhole(contents [][]string) (*rawWhole, error) {
+	rawContents := make([]*rawContent, 0, len(contents))
+	for i, content := range contents {
 		// recognize the section type
 		sectionType := k.recognizer(content)
 
