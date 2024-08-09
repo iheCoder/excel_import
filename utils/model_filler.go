@@ -15,6 +15,7 @@ func CheckModelOrder(model any, values []string) error {
 	return CheckModel(model, values, fieldOrders)
 }
 
+// CheckModel 检查输入的值是否符合模型的定义.允许值为空
 func CheckModel(model interface{}, values []string, fieldOrders []int) error {
 	v := reflect.ValueOf(model)
 
@@ -50,6 +51,11 @@ func CheckModel(model interface{}, values []string, fieldOrders []int) error {
 }
 
 func checkField(v reflect.Value, i, colIndex int, value string) error {
+	// regard as valid if the value is empty
+	if len(value) == 0 {
+		return nil
+	}
+
 	field := v.Field(i)
 
 	switch field.Kind() {
@@ -134,19 +140,19 @@ func setField(v reflect.Value, i int, value string) error {
 		field.SetString(value)
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		fieldValue, err := strconv.ParseInt(value, 10, 64)
-		if err != nil {
+		if err != nil && len(value) != 0 {
 			return err
 		}
 		field.SetInt(fieldValue)
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		fieldValue, err := strconv.ParseUint(value, 10, 64)
-		if err != nil {
+		if err != nil && len(value) != 0 {
 			return err
 		}
 		field.SetUint(fieldValue)
 	case reflect.Float32, reflect.Float64:
 		fieldValue, err := strconv.ParseFloat(value, 64)
-		if err != nil {
+		if err != nil && len(value) != 0 {
 			return err
 		}
 		field.SetFloat(fieldValue)
