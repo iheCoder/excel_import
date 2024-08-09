@@ -68,7 +68,16 @@ func (t *treeImportFramework) parseRawWhole(content [][]string) (*rawCellWhole, 
 		}
 	}
 
-	return &rawCellWhole{contents: content, cellContents: cellContents}, nil
+	root, err := t.constructTree(content)
+	if err != nil {
+		return nil, err
+	}
+
+	return &rawCellWhole{
+		contents:     content,
+		cellContents: cellContents,
+		root:         root,
+	}, nil
 }
 
 func (t *treeImportFramework) checkIsLeaf(i int, row []string) bool {
