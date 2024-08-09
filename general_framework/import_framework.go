@@ -69,6 +69,8 @@ func NewImporterFramework(db *gorm.DB, importers map[RowType]SectionImporter, re
 
 func (k *ImportFramework) Import(path string) error {
 	defer k.recorder.Flush()
+	defer k.progressReporter.Report()
+
 	content, err := k.parseContent(path)
 	if err != nil {
 		fmt.Printf("read file content failed: %v\n", err)
