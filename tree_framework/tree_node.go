@@ -26,6 +26,7 @@ type rawCellWhole struct {
 }
 
 type TreeNode struct {
+	row      int
 	value    string
 	parent   *TreeNode
 	rank     int
@@ -41,11 +42,12 @@ func (t *TreeNode) CheckIsLeaf() bool {
 	return len(t.children) == 0
 }
 
-func constructLevelNode(s string, parent *TreeNode, level int) *TreeNode {
+func constructLevelNode(s string, parent *TreeNode, level int, row int) *TreeNode {
 	node := &TreeNode{
 		value:  s,
 		parent: parent,
 		rank:   level,
+		row:    row,
 	}
 	parent.children = append(parent.children, node)
 	return node

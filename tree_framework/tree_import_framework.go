@@ -64,7 +64,14 @@ func WithColEndFunc(cf colEndFunc) optionFunc {
 }
 
 func (t *treeImportFramework) parseRawWhole(content [][]string) (*rawCellWhole, error) {
+	// construct the tree
+	root, err := t.constructTree(content)
+	if err != nil {
+		return nil, err
+	}
+
 	cellContents := make([][]rawCellContent, len(content))
+	models := make([]any, len(content))
 	for i, row := range content {
 		// parse the cell content
 		cellContents[i] = make([]rawCellContent, len(row))
@@ -80,19 +87,32 @@ func (t *treeImportFramework) parseRawWhole(content [][]string) (*rawCellWhole, 
 				return nil, err
 			}
 		}
+		models[i] = model
 	}
 
-	// construct the tree
-	root, err := t.constructTree(content)
-	if err != nil {
-		return nil, err
-	}
+	// fill the model into the leaf tree node
+	t.fillModelIntoLeafNode(root, models)
 
 	return &rawCellWhole{
 		contents:     content,
 		cellContents: cellContents,
 		root:         root,
 	}, nil
+}
+
+func (t *treeImportFramework) fillModelIntoLeafNode(root *TreeNode, models []any) {
+	if root == nil {
+		return
+	}
+
+	if root.CheckIsLeaf() {
+		root.item = models[root.row-t.ocfg.startRow]
+		return
+	}
+
+	for _, child := range root.children {
+		t.fillModelIntoLeafNode(child, models)
+	}
 }
 
 func (t *treeImportFramework) checkIsLeaf(i int, row []string) bool {
@@ -155,7 +175,7 @@ func (t *treeImportFramework) constructTree(rcContents [][]string) (*TreeNode, e
 			}
 
 			// construct the node
-			node := constructLevelNode(s, parent, level+1)
+			node := constructLevelNode(s, parent, level+1, j+t.ocfg.startRow)
 			t.nodes[curKey] = node
 		}
 	}
