@@ -14,14 +14,15 @@ var (
 )
 
 type importFramework struct {
-	db           *gorm.DB
-	recorder     *util.UnexpectedRecorder
-	checkers     map[RowType]SectionChecker
-	importers    map[RowType]SectionImporter
-	recognizer   sectionRecognizer
-	postHandlers map[RowType]SectionPostHandler
-	rowRawModel  RowModelFactory
-	control      importControl
+	db               *gorm.DB
+	recorder         *util.UnexpectedRecorder
+	checkers         map[RowType]SectionChecker
+	importers        map[RowType]SectionImporter
+	recognizer       sectionRecognizer
+	postHandlers     map[RowType]SectionPostHandler
+	rowRawModel      RowModelFactory
+	control          importControl
+	progressReporter *util.ProgressReporter
 }
 
 func WithPostHandlers(postHandlers map[RowType]SectionPostHandler) optionFunc {
@@ -50,11 +51,12 @@ func WithRowRawModel(rrm RowModelFactory) optionFunc {
 
 func NewImporterFramework(db *gorm.DB, importers map[RowType]SectionImporter, recognizer sectionRecognizer, options ...optionFunc) *importFramework {
 	ki := &importFramework{
-		db:         db,
-		recorder:   util.NewDefaultUnexpectedRecorder(),
-		importers:  importers,
-		recognizer: recognizer,
-		control:    defaultImportControl,
+		db:               db,
+		recorder:         util.NewDefaultUnexpectedRecorder(),
+		importers:        importers,
+		recognizer:       recognizer,
+		control:          defaultImportControl,
+		progressReporter: util.NewProgressReporter(true),
 	}
 
 	for _, option := range options {
@@ -205,6 +207,8 @@ func (k *importFramework) checkTypeError(rc *rawContent) error {
 }
 
 func (k *importFramework) importContent(whole *rawWhole) error {
+	k.progressReporter.StartProgress(len(whole.rawContents))
+
 	if k.checkAllowImportParallel() {
 		return k.importContentParallel(whole)
 	}
@@ -227,8 +231,7 @@ func (k *importFramework) importContentParallel(whole *rawWhole) error {
 
 		gcontent := content
 		eg.Go(func() error {
-			if err := importer.importSection(k.db, gcontent); err != nil {
-				k.recorder.RecordImportError(util.CombineErrors(gcontent.row, err))
+			if err := k.importSection(importer, gcontent); err != nil {
 				return err
 			}
 
@@ -252,10 +255,21 @@ func (k *importFramework) importContentSerial(whole *rawWhole) error {
 			continue
 		}
 
-		if err := importer.importSection(k.db, content); err != nil {
-			fmt.Printf("import section failed: %v\n", err)
-			return util.CombineErrors(content.row, err)
+		if err := k.importSection(importer, content); err != nil {
+			return err
 		}
+	}
+
+	return nil
+}
+
+func (k *importFramework) importSection(importer SectionImporter, content *rawContent) error {
+	defer k.progressReporter.CommitProgress(1)
+
+	if err := importer.importSection(k.db, content); err != nil {
+		fmt.Printf("import row %d section failed: %v\n", content.row, err)
+		k.recorder.RecordImportError(util.CombineErrors(content.row, err))
+		return err
 	}
 
 	return nil
