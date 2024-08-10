@@ -254,6 +254,8 @@ func (t *TreeImportFramework) importLevelNode(importer LevelImporter, node *Tree
 	status := util.ProgressStatusSuccess
 	defer t.progressReporter.CommitProgress(1, status)
 	if err := importer.ImportLevelNode(t.db, node); err != nil {
+		fmt.Printf("import row %d section failed: %v\n", node.row, err)
+		t.recorder.RecordImportError(util.CombineErrors(node.row, err))
 		status = util.ProgressStatusFailed
 		return err
 	}
