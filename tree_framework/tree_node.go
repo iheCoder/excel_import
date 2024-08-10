@@ -10,7 +10,8 @@ var (
 	defaultOptCfg = &treeImportOptionalCfg{
 		genKeyFunc:     defaultKeyGen,
 		startRow:       1,
-		treeColEndFunc: defaultRowEndFunc,
+		treeColEndFunc: defaultTreeColEndFunc,
+		ef:             defaultRawEndFunc,
 	}
 )
 
@@ -97,6 +98,10 @@ func genPrefixNodeKey(s []string, level int) string {
 	return key
 }
 
-func defaultRowEndFunc(next string) bool {
+func defaultTreeColEndFunc(next string) bool {
 	return len(next) == 0
+}
+
+func defaultRawEndFunc(s []string) bool {
+	return len(s) == 0 || len(s[0]) == 0
 }

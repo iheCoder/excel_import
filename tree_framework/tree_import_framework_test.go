@@ -87,15 +87,10 @@ func TestTreeImportFramework_Import(t *testing.T) {
 		ModelFac:     mf,
 	}
 
-	ef := func(s []string) bool {
-		return len(s) == 0 || len(s[0]) == 0
-	}
-	efo := WithEndFunc(ef)
-
 	si := &simpleTestDataImporter{}
 	levelImporters := []LevelImporter{si, si, si}
 
-	tif := NewTreeImportFramework(nil, cfg, levelImporters, efo)
+	tif := NewTreeImportFramework(nil, cfg, levelImporters)
 	err := tif.Import(path)
 	if err != nil {
 		t.Fatal(err)
