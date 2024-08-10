@@ -7,12 +7,13 @@ import (
 )
 
 type TreeImportFramework struct {
-	db            *gorm.DB
-	recorder      *util.UnexpectedRecorder
-	cfg           *TreeImportCfg
-	nodes         map[string]*TreeNode
-	levelImporter []LevelImporter
-	ocfg          *treeImportOptionalCfg
+	db               *gorm.DB
+	recorder         *util.UnexpectedRecorder
+	cfg              *TreeImportCfg
+	nodes            map[string]*TreeNode
+	levelImporter    []LevelImporter
+	ocfg             *treeImportOptionalCfg
+	progressReporter *util.ProgressReporter
 }
 
 func NewTreeImportFramework(db *gorm.DB, cfg *TreeImportCfg, levelImporter []LevelImporter, options ...OptionFunc) *TreeImportFramework {
@@ -30,12 +31,13 @@ func NewTreeImportFramework(db *gorm.DB, cfg *TreeImportCfg, levelImporter []Lev
 	}
 
 	tif := &TreeImportFramework{
-		db:            db,
-		cfg:           cfg,
-		nodes:         make(map[string]*TreeNode),
-		levelImporter: levelImporter,
-		ocfg:          defaultOptCfg,
-		recorder:      util.NewDefaultUnexpectedRecorder(),
+		db:               db,
+		cfg:              cfg,
+		nodes:            make(map[string]*TreeNode),
+		levelImporter:    levelImporter,
+		ocfg:             defaultOptCfg,
+		recorder:         util.NewDefaultUnexpectedRecorder(),
+		progressReporter: util.NewProgressReporter(true),
 	}
 
 	for _, option := range options {
@@ -69,7 +71,7 @@ func WithEndFunc(ef RowEndFunc) OptionFunc {
 
 func WithColEndFunc(cf ColEndFunc) OptionFunc {
 	return func(framework *TreeImportFramework) {
-		framework.ocfg.cf = cf
+		framework.ocfg.treeColEndFunc = cf
 	}
 }
 
@@ -146,13 +148,19 @@ func (t *TreeImportFramework) parseRawWhole(content [][]string) (*rawCellWhole, 
 		return nil, err
 	}
 
+	var totalCellCount int
 	cellContents := make([][]rawCellContent, len(content))
 	models := make([]any, len(content))
 	for i, row := range content {
 		// parse the cell content
 		cellContents[i] = make([]rawCellContent, len(row))
 		for j, cell := range row {
+			if t.ocfg.treeColEndFunc(cell) {
+				break
+			}
+
 			cellContents[i][j] = rawCellContent{val: cell, isLeaf: t.checkIsLeaf(i, row)}
+			totalCellCount++
 		}
 
 		// parse the content into models
@@ -170,9 +178,10 @@ func (t *TreeImportFramework) parseRawWhole(content [][]string) (*rawCellWhole, 
 	t.fillModelIntoLeafNode(root, models)
 
 	return &rawCellWhole{
-		contents:     content,
-		cellContents: cellContents,
-		root:         root,
+		contents:       content,
+		cellContents:   cellContents,
+		root:           root,
+		totalCellCount: totalCellCount,
 	}, nil
 }
 
@@ -200,10 +209,12 @@ func (t *TreeImportFramework) checkIsLeaf(i int, row []string) bool {
 	if i+1 < len(row) {
 		next = row[i+1]
 	}
-	return t.ocfg.cf(next)
+	return t.ocfg.treeColEndFunc(next)
 }
 
 func (t *TreeImportFramework) importTree(whole *rawCellWhole) error {
+	t.progressReporter.StartProgress(whole.totalCellCount)
+
 	root := whole.root
 
 	// import the tree
@@ -223,6 +234,17 @@ func (t *TreeImportFramework) importTree(whole *rawCellWhole) error {
 	return nil
 }
 
+func (t *TreeImportFramework) importLevelNode(importer LevelImporter, node *TreeNode) error {
+	status := util.ProgressStatusSuccess
+	defer t.progressReporter.CommitProgress(1, status)
+	if err := importer.ImportLevelNode(t.db, node); err != nil {
+		status = util.ProgressStatusFailed
+		return err
+	}
+
+	return nil
+}
+
 func (t *TreeImportFramework) constructTree(rcContents [][]string) (*TreeNode, error) {
 	// remove the column which is not belongs to the tree
 	rcContents = rcContents[:t.cfg.TreeBoundary+1]
@@ -235,7 +257,7 @@ func (t *TreeImportFramework) constructTree(rcContents [][]string) (*TreeNode, e
 	parent := root
 	for level, i := range t.cfg.LevelOrder {
 		for j, s := range contents[i] {
-			if len(s) == 0 {
+			if t.ocfg.treeColEndFunc(s) {
 				continue
 			}
 

@@ -8,9 +8,9 @@ import (
 var (
 	defaultKeyGen = genNodeKey
 	defaultOptCfg = &treeImportOptionalCfg{
-		genKeyFunc: defaultKeyGen,
-		startRow:   1,
-		cf:         defaultRowEndFunc,
+		genKeyFunc:     defaultKeyGen,
+		startRow:       1,
+		treeColEndFunc: defaultRowEndFunc,
 	}
 )
 
@@ -20,9 +20,10 @@ type rawCellContent struct {
 }
 
 type rawCellWhole struct {
-	contents     [][]string
-	cellContents [][]rawCellContent
-	root         *TreeNode
+	contents       [][]string
+	cellContents   [][]rawCellContent
+	root           *TreeNode
+	totalCellCount int
 }
 
 type TreeNode struct {
@@ -79,8 +80,8 @@ type treeImportOptionalCfg struct {
 	startRow int
 	// the end condition of the function
 	ef RowEndFunc
-	// the end condition of the column
-	cf ColEndFunc
+	// the end condition of the tree column
+	treeColEndFunc ColEndFunc
 }
 
 func genNodeKey(s []string, level int) string {
