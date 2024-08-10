@@ -20,10 +20,10 @@ type rawCellContent struct {
 }
 
 type rawCellWhole struct {
-	contents       [][]string
-	cellContents   [][]rawCellContent
-	root           *TreeNode
-	totalCellCount int
+	contents        [][]string
+	cellContents    [][]rawCellContent
+	root            *TreeNode
+	totalModelCount int
 }
 
 type TreeNode struct {

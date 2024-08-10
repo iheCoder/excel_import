@@ -77,6 +77,7 @@ func WithColEndFunc(cf ColEndFunc) OptionFunc {
 
 func (t *TreeImportFramework) Import(path string) error {
 	defer t.recorder.Flush()
+	defer t.progressReporter.Report()
 
 	whole, err := t.parseContent(path)
 	if err != nil {
@@ -148,7 +149,6 @@ func (t *TreeImportFramework) parseRawWhole(content [][]string) (*rawCellWhole, 
 		return nil, err
 	}
 
-	var totalCellCount int
 	cellContents := make([][]rawCellContent, len(content))
 	models := make([]any, len(content))
 	for i, row := range content {
@@ -160,7 +160,6 @@ func (t *TreeImportFramework) parseRawWhole(content [][]string) (*rawCellWhole, 
 			}
 
 			cellContents[i][j] = rawCellContent{val: cell, isLeaf: t.checkIsLeaf(i, row)}
-			totalCellCount++
 		}
 
 		// parse the content into models
@@ -177,12 +176,29 @@ func (t *TreeImportFramework) parseRawWhole(content [][]string) (*rawCellWhole, 
 	// fill the rawModel into the leaf tree node
 	t.fillModelIntoLeafNode(root, models)
 
+	// calculate the total node count
+	totalNodeCount := t.calculateTotalNodeCount(root)
+
 	return &rawCellWhole{
-		contents:       content,
-		cellContents:   cellContents,
-		root:           root,
-		totalCellCount: totalCellCount,
+		contents:     content,
+		cellContents: cellContents,
+		root:         root,
+		// exclude the root node
+		totalModelCount: totalNodeCount - 1,
 	}, nil
+}
+
+func (t *TreeImportFramework) calculateTotalNodeCount(root *TreeNode) int {
+	if root == nil {
+		return 0
+	}
+
+	count := 1
+	for _, child := range root.children {
+		count += t.calculateTotalNodeCount(child)
+	}
+
+	return count
 }
 
 func (t *TreeImportFramework) fillModelIntoLeafNode(root *TreeNode, models []any) {
@@ -213,7 +229,7 @@ func (t *TreeImportFramework) checkIsLeaf(i int, row []string) bool {
 }
 
 func (t *TreeImportFramework) importTree(whole *rawCellWhole) error {
-	t.progressReporter.StartProgress(whole.totalCellCount)
+	t.progressReporter.StartProgress(whole.totalModelCount)
 
 	root := whole.root
 
@@ -222,7 +238,7 @@ func (t *TreeImportFramework) importTree(whole *rawCellWhole) error {
 	for _, importer := range t.levelImporter {
 		nextChildren := make([]*TreeNode, 0)
 		for _, child := range children {
-			if err := importer.ImportLevelNode(t.db, child); err != nil {
+			if err := t.importLevelNode(importer, child); err != nil {
 				return err
 			}
 			nextChildren = append(nextChildren, child.children...)
