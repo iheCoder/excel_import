@@ -113,7 +113,7 @@ func (p *ProgressReporter) Report() {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	if !p.enable {
+	if !p.enable || p.total == 0 {
 		return
 	}
 
