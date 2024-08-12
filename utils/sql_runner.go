@@ -1,20 +1,27 @@
 package util
 
 import (
+	"bufio"
 	"fmt"
+	"gorm.io/gorm"
+	"io"
 	"os"
 	"reflect"
 	"strings"
 )
 
 type SqlSentencesRunner struct {
-	sqlPath string
-	sqlFile *os.File
+	sqlPath   string
+	sqlFile   *os.File
+	db        *gorm.DB
+	tableName string
 }
 
-func NewSqlSentencesRunner(sqlPath string) *SqlSentencesRunner {
+func NewSqlSentencesRunner(sqlPath string, db *gorm.DB, tableName string) *SqlSentencesRunner {
 	return &SqlSentencesRunner{
-		sqlPath: sqlPath,
+		sqlPath:   sqlPath,
+		db:        db,
+		tableName: tableName,
 	}
 }
 
@@ -27,7 +34,7 @@ func (r *SqlSentencesRunner) GenerateSqlInsertSentences(model any) error {
 	}
 
 	// generate insert sql sentences
-	sql := GenerateInsertSQLWithValues("table_name", model)
+	sql := GenerateInsertSQLWithValues(r.tableName, model)
 
 	// write to file
 	_, err := r.sqlFile.WriteString(sql + "\n")
@@ -35,6 +42,51 @@ func (r *SqlSentencesRunner) GenerateSqlInsertSentences(model any) error {
 		return err
 	}
 
+	return nil
+}
+
+func (r *SqlSentencesRunner) RunSqlSentencesWithBatch(batchSize int) error {
+	// reset file pointer
+	_, err := r.sqlFile.Seek(0, 0)
+	if err != nil {
+		return err
+	}
+
+	// read sql line from file
+	ioReader := bufio.NewReader(r.sqlFile)
+	var sqlSentences []string
+	var readLastLine bool
+	for {
+		line, _, err := ioReader.ReadLine()
+		if err == io.EOF {
+			readLastLine = true
+		} else if err != nil {
+			return err
+		}
+
+		// collect sql sentences until batch size
+		// if batch size is reached, run sql sentences
+		sqlSentences = append(sqlSentences, string(line))
+
+		if len(sqlSentences) == batchSize || readLastLine {
+			if len(sqlSentences) == 0 {
+				break
+			}
+
+			// run sql sentences
+			sql := strings.Join(sqlSentences, "\n")
+			if err = r.db.Exec(sql).Error; err != nil {
+				return err
+			}
+			sqlSentences = nil
+		}
+
+		if readLastLine {
+			break
+		}
+	}
+
+	// run sql sentences with batch size
 	return nil
 }
 
