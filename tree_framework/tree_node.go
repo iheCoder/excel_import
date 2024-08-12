@@ -69,8 +69,10 @@ func constructLevelNode(s string, parent *TreeNode, level int, row int) *TreeNod
 
 type TreeImportCfg struct {
 	LevelOrder []int
-	// the TreeBoundary of the tree node
+	// the TreeBoundary of the tree node. the last index that belongs to the tree
 	TreeBoundary int
+	// the column count of the raw model
+	ColumnCount int
 	// the rawModel factory
 	ModelFac excel_import.RowModelFactory
 }

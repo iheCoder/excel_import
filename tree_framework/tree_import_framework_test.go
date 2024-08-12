@@ -83,14 +83,33 @@ func TestTreeImportFramework_Import(t *testing.T) {
 	mf := &modelFac{}
 	cfg := &TreeImportCfg{
 		LevelOrder:   []int{0, 1, 2},
-		TreeBoundary: 4,
+		TreeBoundary: 2,
 		ModelFac:     mf,
+		ColumnCount:  4,
 	}
 
 	si := &simpleTestDataImporter{}
 	levelImporters := []LevelImporter{si, si, si}
 
 	tif := NewTreeImportFramework(nil, cfg, levelImporters)
+	err := tif.Import(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(si.leafs) != 5 || len(si.msvs) != 11 {
+		t.Fatalf("leafs length is %d, models length is %d", len(si.leafs), len(si.msvs))
+	}
+
+	t.Log("done")
+}
+
+func TestTreeImportFramework_ImportStrictOrder(t *testing.T) {
+	path := "../testdata/excel_tree_test_data.xlsx"
+	mf := &modelFac{}
+	si := &simpleTestDataImporter{}
+
+	tif := NewTreeImportStrictOrderFramework(nil, 2, 4, mf, si)
 	err := tif.Import(path)
 	if err != nil {
 		t.Fatal(err)

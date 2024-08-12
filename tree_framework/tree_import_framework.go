@@ -1,6 +1,7 @@
 package tree_framework
 
 import (
+	"excel_import"
 	"excel_import/utils"
 	"fmt"
 	"gorm.io/gorm"
@@ -14,6 +15,27 @@ type TreeImportFramework struct {
 	levelImporter    []LevelImporter
 	ocfg             *treeImportOptionalCfg
 	progressReporter *util.ProgressReporter
+}
+
+func NewTreeImportStrictOrderFramework(db *gorm.DB, treeBoundary, colCount int, modelFac excel_import.RowModelFactory, importer LevelImporter, options ...OptionFunc) *TreeImportFramework {
+	treeLevel := treeBoundary + 1
+	levelOrder := make([]int, treeLevel)
+	for i := 0; i < treeLevel; i++ {
+		levelOrder[i] = i
+	}
+
+	levelImporter := make([]LevelImporter, treeLevel)
+	for i := 0; i < treeLevel; i++ {
+		levelImporter[i] = importer
+	}
+
+	cfg := &TreeImportCfg{
+		TreeBoundary: treeBoundary,
+		ModelFac:     modelFac,
+		LevelOrder:   levelOrder,
+		ColumnCount:  colCount,
+	}
+	return NewTreeImportFramework(db, cfg, levelImporter, options...)
 }
 
 func NewTreeImportFramework(db *gorm.DB, cfg *TreeImportCfg, levelImporter []LevelImporter, options ...OptionFunc) *TreeImportFramework {
@@ -127,8 +149,8 @@ func (t *TreeImportFramework) preHandleRawContent(contents [][]string) [][]strin
 	// format the content
 	for i, row := range contents {
 		// if the content is less than the min column count, complete it with empty string
-		if len(row) < t.cfg.TreeBoundary {
-			row = append(row, make([]string, t.cfg.TreeBoundary-len(row))...)
+		if len(row) < t.cfg.ColumnCount {
+			row = append(row, make([]string, t.cfg.ColumnCount-len(row))...)
 		}
 
 		// format the cell
@@ -264,11 +286,11 @@ func (t *TreeImportFramework) importLevelNode(importer LevelImporter, node *Tree
 }
 
 func (t *TreeImportFramework) constructTree(rcContents [][]string) (*TreeNode, error) {
-	// remove the column which is not belongs to the tree
-	rcContents = rcContents[:t.cfg.TreeBoundary+1]
-
 	// reverse the matrix
 	contents := reverseMatrix(rcContents)
+
+	// remove the column which is not belongs to the tree
+	contents = contents[:t.cfg.TreeBoundary+1]
 
 	// construct the tree
 	root := &TreeNode{}
