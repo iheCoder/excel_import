@@ -173,6 +173,11 @@ func CombineTablesIntoOne(paths ...string) error {
 				}
 			}
 
+			// skip header
+			if ok {
+				sheet.Rows = sheet.Rows[1:]
+			}
+
 			for _, row := range sheet.Rows {
 				newRow := newSheet.AddRow()
 				for _, cell := range row.Cells {
