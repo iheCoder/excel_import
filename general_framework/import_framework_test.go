@@ -29,6 +29,22 @@ func TestImportFramework_Import(t *testing.T) {
 	t.Log("done")
 }
 
+func TestImportFramework_ImportOneSection(t *testing.T) {
+	stdi := &simpleTestDataImporter{}
+	framework := NewImporterOneSectionFramework(nil, stdi, WithRowRawModel(stdi))
+	path := "../testdata/excel_test_data.xlsx"
+
+	err := framework.Import(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, p := range stdi.persons {
+		t.Log(p)
+	}
+	t.Log("done")
+}
+
 type simpleTestDataImporter struct {
 	persons []*Person
 }

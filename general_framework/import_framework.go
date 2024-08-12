@@ -11,7 +11,8 @@ import (
 )
 
 var (
-	errContentCheckFailed = errors.New("content check failed")
+	errContentCheckFailed                 = errors.New("content check failed")
+	ImportFrameworkOneSectionType RowType = "import_framework_one_section"
 )
 
 type ImportFramework struct {
@@ -65,6 +66,17 @@ func NewImporterFramework(db *gorm.DB, importers map[RowType]SectionImporter, re
 	}
 
 	return ki
+}
+
+// NewImporterOneSectionFramework create a new ImportFramework with only one section type.
+func NewImporterOneSectionFramework(db *gorm.DB, importer SectionImporter, options ...OptionFunc) *ImportFramework {
+	importers := map[RowType]SectionImporter{
+		ImportFrameworkOneSectionType: importer,
+	}
+
+	return NewImporterFramework(db, importers, func(s []string) RowType {
+		return ImportFrameworkOneSectionType
+	}, options...)
 }
 
 func (k *ImportFramework) Import(path string) error {
