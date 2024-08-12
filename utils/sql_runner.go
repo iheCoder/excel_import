@@ -27,8 +27,21 @@ func (r *SqlSentencesRunner) GenerateSqlInsertSentences(model any) error {
 	}
 
 	// generate insert sql sentences
+	sql := GenerateInsertSQLWithValues("table_name", model)
 
 	// write to file
+	_, err := r.sqlFile.WriteString(sql + "\n")
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *SqlSentencesRunner) Close() error {
+	if r.sqlFile != nil {
+		return r.sqlFile.Close()
+	}
 	return nil
 }
 
