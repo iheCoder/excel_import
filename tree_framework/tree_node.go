@@ -27,6 +27,18 @@ type rawCellWhole struct {
 	totalModelCount int
 }
 
+func (r *rawCellWhole) GetRoot() *TreeNode {
+	return r.root
+}
+
+func (r *rawCellWhole) GetNodeCount() int {
+	return r.totalModelCount
+}
+
+func (r *rawCellWhole) GetLeafCount() int {
+	return len(r.contents)
+}
+
 type TreeNode struct {
 	id       int64
 	row      int

@@ -16,6 +16,7 @@ type TreeImportFramework struct {
 	ocfg             *treeImportOptionalCfg
 	progressReporter *util.ProgressReporter
 	postHandler      excel_import.PostHandler
+	preHandler       TreePreHandler
 }
 
 func NewTreeImportStrictOrderFramework(db *gorm.DB, treeBoundary, colCount int, modelFac excel_import.RowModelFactory, importer LevelImporter, options ...OptionFunc) *TreeImportFramework {
@@ -104,6 +105,12 @@ func WithPostHandler(ph excel_import.PostHandler) OptionFunc {
 	}
 }
 
+func WithPreHandler(ph TreePreHandler) OptionFunc {
+	return func(framework *TreeImportFramework) {
+		framework.preHandler = ph
+	}
+}
+
 func (t *TreeImportFramework) Import(path string) error {
 	defer t.recorder.Flush()
 	defer t.progressReporter.Report()
@@ -112,6 +119,14 @@ func (t *TreeImportFramework) Import(path string) error {
 	if err != nil {
 		fmt.Printf("parse file content failed: %v\n", err)
 		return err
+	}
+
+	if t.preHandler != nil {
+		err = t.preHandler.PreImportHandle(t.db, whole)
+		if err != nil {
+			fmt.Printf("pre handler failed: %v\n", err)
+			return err
+		}
 	}
 
 	err = t.importTree(whole)
