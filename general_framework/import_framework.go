@@ -21,13 +21,13 @@ type ImportFramework struct {
 	checkers         map[RowType]SectionChecker
 	importers        map[RowType]SectionImporter
 	recognizer       SectionRecognizer
-	postHandlers     map[RowType]SectionPostHandler
+	postHandlers     map[RowType]excel_import.PostHandler
 	rowRawModel      excel_import.RowModelFactory
 	control          ImportControl
 	progressReporter *util.ProgressReporter
 }
 
-func WithPostHandlers(postHandlers map[RowType]SectionPostHandler) OptionFunc {
+func WithPostHandlers(postHandlers map[RowType]excel_import.PostHandler) OptionFunc {
 	return func(framework *ImportFramework) {
 		framework.postHandlers = postHandlers
 	}
@@ -195,7 +195,7 @@ func (k *ImportFramework) checkContent(whole *rawWhole) error {
 			continue
 		}
 
-		err = checker.checkValid(rc)
+		err = checker.CheckValid(rc)
 
 		if err != nil || terr != nil {
 			checkFailed = true
@@ -282,7 +282,7 @@ func (k *ImportFramework) importSection(importer SectionImporter, content *RawCo
 	status := util.ProgressStatusSuccess
 	defer k.progressReporter.CommitProgress(1, status)
 
-	if err := importer.importSection(k.db, content); err != nil {
+	if err := importer.ImportSection(k.db, content); err != nil {
 		status = util.ProgressStatusFailed
 		fmt.Printf("import row %d section failed: %v\n", content.Row, err)
 		k.recorder.RecordImportError(util.CombineErrors(content.Row, err))
@@ -298,7 +298,7 @@ func (k *ImportFramework) checkAllowImportParallel() bool {
 
 func (k *ImportFramework) postHandle() error {
 	for _, handler := range k.postHandlers {
-		if err := handler.postHandle(k.db); err != nil {
+		if err := handler.PostHandle(k.db); err != nil {
 			return err
 		}
 	}

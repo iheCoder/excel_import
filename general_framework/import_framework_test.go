@@ -54,7 +54,7 @@ type Person struct {
 	Age  int    `json:"age"`
 }
 
-func (di *simpleTestDataImporter) importSection(tx *gorm.DB, s *RawContent) error {
+func (di *simpleTestDataImporter) ImportSection(tx *gorm.DB, s *RawContent) error {
 	di.persons = append(di.persons, s.Model.(*Person))
 
 	return nil
