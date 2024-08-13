@@ -4,7 +4,7 @@ import "gorm.io/gorm"
 
 type LevelImporter interface {
 	// import level tree node
-	ImportLevelNode(tx *gorm.DB, parent *TreeNode) error
+	ImportLevelNode(tx *gorm.DB, node *TreeNode) error
 }
 
 type GenerateNodeKey func(s []string, level int) string

@@ -256,17 +256,17 @@ func (t *TreeImportFramework) importTree(whole *rawCellWhole) error {
 	root := whole.root
 
 	// import the tree
-	children := root.children
+	nodes := []*TreeNode{root}
 	for _, importer := range t.levelImporter {
-		nextChildren := make([]*TreeNode, 0)
-		for _, child := range children {
-			if err := t.importLevelNode(importer, child); err != nil {
+		nextNodes := make([]*TreeNode, 0)
+		for _, node := range nodes {
+			if err := t.importLevelNode(importer, node); err != nil {
 				return err
 			}
-			nextChildren = append(nextChildren, child.children...)
+			nextNodes = append(nextNodes, node.children...)
 		}
 
-		children = nextChildren
+		nodes = nextNodes
 	}
 
 	return nil

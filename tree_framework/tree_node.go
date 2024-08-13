@@ -56,6 +56,10 @@ func (t *TreeNode) CheckIsLeaf() bool {
 	return len(t.children) == 0
 }
 
+func (t *TreeNode) CheckIsRoot() bool {
+	return t.parent == nil
+}
+
 func constructLevelNode(s string, parent *TreeNode, level int, row int) *TreeNode {
 	node := &TreeNode{
 		value:  s,

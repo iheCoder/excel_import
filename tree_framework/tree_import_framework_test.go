@@ -68,10 +68,10 @@ type simpleTestDataImporter struct {
 	msvs  []string
 }
 
-func (si *simpleTestDataImporter) ImportLevelNode(tx *gorm.DB, n *TreeNode) error {
-	si.msvs = append(si.msvs, n.GetValue())
-	if n.CheckIsLeaf() {
-		si.leafs = append(si.leafs, n.GetItem().(*rawModel))
+func (si *simpleTestDataImporter) ImportLevelNode(tx *gorm.DB, node *TreeNode) error {
+	si.msvs = append(si.msvs, node.GetValue())
+	if node.CheckIsLeaf() {
+		si.leafs = append(si.leafs, node.GetItem().(*rawModel))
 	}
 
 	return nil
