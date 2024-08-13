@@ -71,6 +71,14 @@ func (t *TreeNode) SetID(id int64) {
 	t.id = id
 }
 
+func (t *TreeNode) GetRank() int {
+	return t.rank
+}
+
+func (t *TreeNode) GetRow() int {
+	return t.row
+}
+
 func constructLevelNode(s string, parent *TreeNode, level int, row int) *TreeNode {
 	node := &TreeNode{
 		value:  s,
