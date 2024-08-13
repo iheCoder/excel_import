@@ -267,3 +267,72 @@ func writeXLSXContent(path string, content [][]string) error {
 
 	return f.Save(path)
 }
+
+type treeExcelInfo struct {
+	path string
+	key  string
+	f    *xlsx.File
+}
+
+func genTreeKey(ukCols []string) string {
+	return strings.Join(ukCols, "_")
+}
+
+// DivideMultipleTreesIntoMultipleTables 将多棵树拆分为多个表
+// 依据ukColIndex列索引组合唯一键，将多棵树拆分为多个表
+func DivideMultipleTreesIntoMultipleTables(path string, ukColIndex []int) ([]string, error) {
+	records, err := ReadExcelContent(path)
+	if err != nil {
+		return nil, err
+	}
+
+	header := records[0]
+
+	ukTreeMap := make(map[string]*treeExcelInfo)
+	for _, row := range records[1:] {
+		// generate unique key
+		ukCols := make([]string, 0, len(ukColIndex))
+		for _, idx := range ukColIndex {
+			ukCols = append(ukCols, FormatCell(row[idx]))
+		}
+		key := genTreeKey(ukCols)
+
+		// get or create tree
+		tree, ok := ukTreeMap[key]
+		if !ok {
+			f := xlsx.NewFile()
+			sheet, err := f.AddSheet("Sheet1")
+			if err != nil {
+				return nil, err
+			}
+
+			for i, cell := range header {
+				sheet.Cell(0, i).SetString(cell)
+			}
+
+			tree = &treeExcelInfo{
+				path: strings.TrimSuffix(path, filepath.Ext(path)) + "_" + key + filepath.Ext(path),
+				key:  key,
+				f:    f,
+			}
+			ukTreeMap[key] = tree
+		}
+
+		// write row
+		treeSheet := tree.f.Sheets[0]
+		exRow := treeSheet.AddRow()
+		for _, cell := range row {
+			exRow.AddCell().SetString(cell)
+		}
+	}
+
+	var filePaths []string
+	for _, tree := range ukTreeMap {
+		if err = tree.f.Save(tree.path); err != nil {
+			return nil, err
+		}
+		filePaths = append(filePaths, tree.path)
+	}
+
+	return filePaths, nil
+}

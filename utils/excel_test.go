@@ -53,3 +53,18 @@ func TestDivideExcelContent(t *testing.T) {
 		fmt.Println(content)
 	}
 }
+
+func TestDivideMultipleTreesIntoMultipleTables(t *testing.T) {
+	path := "../testdata/excel_tree_mul_tree_data.xlsx"
+	ukColIndex := []int{0, 1, 2, 3}
+	paths, err := DivideMultipleTreesIntoMultipleTables(path, ukColIndex)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(paths) != 8 {
+		t.Fatalf("expected 8, got %d", len(paths))
+	}
+
+	t.Log("done")
+}
