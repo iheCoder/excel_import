@@ -28,6 +28,7 @@ type rawCellWhole struct {
 }
 
 type TreeNode struct {
+	id       int64
 	row      int
 	value    string
 	parent   *TreeNode
@@ -58,6 +59,16 @@ func (t *TreeNode) CheckIsLeaf() bool {
 
 func (t *TreeNode) CheckIsRoot() bool {
 	return t.parent == nil
+}
+
+func (t *TreeNode) GetID() int64 {
+	return t.id
+}
+
+// SetID set the id of the tree node
+// should be called after import the tree node
+func (t *TreeNode) SetID(id int64) {
+	t.id = id
 }
 
 func constructLevelNode(s string, parent *TreeNode, level int, row int) *TreeNode {
