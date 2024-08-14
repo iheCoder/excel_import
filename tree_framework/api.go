@@ -3,7 +3,7 @@ package tree_framework
 import "gorm.io/gorm"
 
 type LevelImporter interface {
-	// import level tree node
+	// ImportLevelNode import level tree node
 	ImportLevelNode(tx *gorm.DB, node *TreeNode) error
 }
 
@@ -19,6 +19,8 @@ type TreeInfo interface {
 	GetNodeCount() int
 	// GetLeafCount return the leaf count of the tree
 	GetLeafCount() int
+	// GetModels return the models of the tree
+	GetModels() []any
 }
 
 type GenerateNodeKey func(s []string, level int) string

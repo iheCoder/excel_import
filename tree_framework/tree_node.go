@@ -25,6 +25,7 @@ type rawCellWhole struct {
 	cellContents    [][]rawCellContent
 	root            *TreeNode
 	totalModelCount int
+	models          []any
 }
 
 func (r *rawCellWhole) GetRoot() *TreeNode {
@@ -39,8 +40,13 @@ func (r *rawCellWhole) GetLeafCount() int {
 	return len(r.contents)
 }
 
+func (r *rawCellWhole) GetModels() []any {
+	return r.models
+}
+
 type TreeNode struct {
 	id       int64
+	key      string
 	row      int
 	value    string
 	parent   *TreeNode
@@ -49,6 +55,18 @@ type TreeNode struct {
 	item     any
 }
 
+func (t *TreeNode) GetKey() string {
+	return t.key
+}
+
+// SetKey set the key of the tree node
+// the key is the unique key of the tree node
+func (t *TreeNode) SetKey(key string) {
+	t.key = key
+}
+
+// GetItem get the item of the tree node
+// the item is the raw model of the tree node, usually the leaf node has the item
 func (t *TreeNode) GetItem() any {
 	return t.item
 }
@@ -77,7 +95,7 @@ func (t *TreeNode) GetID() int64 {
 	return t.id
 }
 
-// SetID set the id of the tree node
+// SetID set the id of the tree node.
 // should be called after import the tree node
 func (t *TreeNode) SetID(id int64) {
 	t.id = id
@@ -87,6 +105,8 @@ func (t *TreeNode) GetRank() int {
 	return t.rank
 }
 
+// GetRow get the row of the tree node in the raw model
+// only the leaf node has the row
 func (t *TreeNode) GetRow() int {
 	return t.row
 }

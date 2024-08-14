@@ -237,6 +237,7 @@ func (t *TreeImportFramework) parseRawWhole(content [][]string) (*rawCellWhole, 
 		root:         root,
 		// exclude the root node
 		totalModelCount: totalNodeCount - 1,
+		models:          models,
 	}, nil
 }
 
