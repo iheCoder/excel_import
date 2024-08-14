@@ -280,10 +280,14 @@ func genTreeKey(ukCols []string) string {
 
 // DivideMultipleTreesIntoMultipleTables 将多棵树拆分为多个表
 // 依据ukColIndex列索引组合唯一键，将多棵树拆分为多个表
-func DivideMultipleTreesIntoMultipleTables(path string, ukColIndex []int) ([]string, error) {
+func DivideMultipleTreesIntoMultipleTables(path, outputDir string, ukColIndex []int) ([]string, error) {
 	records, err := ReadExcelContent(path)
 	if err != nil {
 		return nil, err
+	}
+
+	if len(records) <= 1 {
+		return nil, fmt.Errorf("empty excel content")
 	}
 
 	header := records[0]
@@ -311,7 +315,7 @@ func DivideMultipleTreesIntoMultipleTables(path string, ukColIndex []int) ([]str
 			}
 
 			tree = &treeExcelInfo{
-				path: strings.TrimSuffix(path, filepath.Ext(path)) + "_" + key + filepath.Ext(path),
+				path: filepath.Join(outputDir, key+".xlsx"),
 				key:  key,
 				f:    f,
 			}
@@ -323,6 +327,13 @@ func DivideMultipleTreesIntoMultipleTables(path string, ukColIndex []int) ([]str
 		exRow := treeSheet.AddRow()
 		for _, cell := range row {
 			exRow.AddCell().SetString(cell)
+		}
+	}
+
+	// create output dir if not exists
+	if _, err = os.Stat(outputDir); os.IsNotExist(err) {
+		if err = os.MkdirAll(outputDir, os.ModePerm); err != nil {
+			return nil, err
 		}
 	}
 

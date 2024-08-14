@@ -57,7 +57,7 @@ func TestDivideExcelContent(t *testing.T) {
 func TestDivideMultipleTreesIntoMultipleTables(t *testing.T) {
 	path := "../testdata/excel_tree_mul_tree_data.xlsx"
 	ukColIndex := []int{0, 1, 2, 3}
-	paths, err := DivideMultipleTreesIntoMultipleTables(path, ukColIndex)
+	paths, err := DivideMultipleTreesIntoMultipleTables(path, "../testdata/trees_output", ukColIndex)
 	if err != nil {
 		t.Fatal(err)
 	}
