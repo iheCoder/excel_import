@@ -115,7 +115,7 @@ func TestTreeImportFramework_ImportStrictOrder(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if len(si.leafs) != 5 || len(si.msvs) != 11 {
+	if len(si.leafs) != 5 || len(si.msvs) != 12 {
 		t.Fatalf("leafs length is %d, models length is %d", len(si.leafs), len(si.msvs))
 	}
 

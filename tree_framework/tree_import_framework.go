@@ -311,12 +311,13 @@ func (t *TreeImportFramework) importTree(whole *rawCellWhole) error {
 }
 
 func (t *TreeImportFramework) importLevelNode(importer LevelImporter, node *TreeNode) error {
+	status := util.ProgressStatusSuccess
+	defer t.progressReporter.CommitProgress(1, status)
+
 	if node == nil || importer == nil {
 		return nil
 	}
 
-	status := util.ProgressStatusSuccess
-	defer t.progressReporter.CommitProgress(1, status)
 	if err := importer.ImportLevelNode(t.db, node); err != nil {
 		fmt.Printf("import row %d section failed: %v\n", node.row, err)
 		t.recorder.RecordImportError(util.CombineErrors(node.row, err))
