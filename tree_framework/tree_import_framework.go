@@ -256,17 +256,24 @@ func (t *TreeImportFramework) calculateTotalNodeCount(root *TreeNode) int {
 	return count
 }
 
-func (t *TreeImportFramework) fillModelIntoLeafNode(root *TreeNode, models []any) {
-	if root == nil {
+func (t *TreeImportFramework) fillModelIntoLeafNode(node *TreeNode, models []any) {
+	if node == nil {
 		return
 	}
 
-	if root.CheckIsLeaf() {
-		root.item = models[root.row-t.ocfg.startRow]
+	if node.CheckIsLeaf() {
+		for _, nodeItem := range node.extra.items {
+			if nodeItem.row < t.ocfg.startRow || nodeItem.row >= t.ocfg.startRow+len(models) {
+				fmt.Printf("row %d out of range\n", nodeItem.row)
+				continue
+			}
+
+			nodeItem.item = models[nodeItem.row-t.ocfg.startRow]
+		}
 		return
 	}
 
-	for _, child := range root.children {
+	for _, child := range node.children {
 		t.fillModelIntoLeafNode(child, models)
 	}
 }
@@ -319,8 +326,8 @@ func (t *TreeImportFramework) importLevelNode(importer LevelImporter, node *Tree
 	}
 
 	if err := importer.ImportLevelNode(t.db, node); err != nil {
-		fmt.Printf("import row %d section failed: %v\n", node.row, err)
-		t.recorder.RecordImportError(util.CombineErrors(node.row, err))
+		fmt.Printf("import value %s section failed: %v\n", node.GetValue(), err)
+		t.recorder.RecordImportError(util.CombineRowsErrors(node.GetRows(), err))
 		status = util.ProgressStatusFailed
 		return err
 	}
@@ -346,22 +353,24 @@ func (t *TreeImportFramework) constructTree(rcContents [][]string) (*TreeNode, e
 
 			// if current node has been constructed, skip it
 			curKey := t.ocfg.genKeyFunc(rcContents[j][:i+1], level+1)
-			if _, ok := t.nodes[curKey]; ok {
-				continue
+			node, ok := t.nodes[curKey]
+			if !ok {
+				// find the parent node
+				if level > 0 {
+					porder := t.cfg.LevelOrder[level-1]
+					parent = t.findParent(rcContents[j][:porder+1], level)
+				}
+				if parent == nil {
+					return nil, fmt.Errorf("parent not found for %s", s)
+				}
+
+				// construct the node
+				node = constructLevelNode(s, parent, level+1)
+				t.nodes[curKey] = node
 			}
 
-			// find the parent node
-			if level > 0 {
-				porder := t.cfg.LevelOrder[level-1]
-				parent = t.findParent(rcContents[j][:porder+1], level)
-			}
-			if parent == nil {
-				return nil, fmt.Errorf("parent not found for %s", s)
-			}
-
-			// construct the node
-			node := constructLevelNode(s, parent, level+1, j+t.ocfg.startRow)
-			t.nodes[curKey] = node
+			// add the item into the node
+			node.extra.items = append(node.extra.items, &TreeNodeItem{row: j + t.ocfg.startRow})
 		}
 	}
 

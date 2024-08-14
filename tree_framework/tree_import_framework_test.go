@@ -71,7 +71,7 @@ type simpleTestDataImporter struct {
 func (si *simpleTestDataImporter) ImportLevelNode(tx *gorm.DB, node *TreeNode) error {
 	si.msvs = append(si.msvs, node.GetValue())
 	if node.CheckIsLeaf() {
-		si.leafs = append(si.leafs, node.GetItem().(*rawModel))
+		si.leafs = append(si.leafs, &rawModel{})
 	}
 
 	return nil

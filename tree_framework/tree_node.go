@@ -47,12 +47,20 @@ func (r *rawCellWhole) GetModels() []any {
 type TreeNode struct {
 	id       int64
 	key      string
-	row      int
 	value    string
 	parent   *TreeNode
 	rank     int
 	children []*TreeNode
-	item     any
+	extra    *TreeNodeExtra
+}
+
+type TreeNodeExtra struct {
+	items []*TreeNodeItem
+}
+
+type TreeNodeItem struct {
+	item any
+	row  int
 }
 
 func (t *TreeNode) GetKey() string {
@@ -68,7 +76,7 @@ func (t *TreeNode) SetKey(key string) {
 // GetItem get the item of the tree node
 // the item is the raw model of the tree node, usually the leaf node has the item
 func (t *TreeNode) GetItem() any {
-	return t.item
+	return t.extra.items[0].item
 }
 
 func (t *TreeNode) GetValue() string {
@@ -85,6 +93,15 @@ func (t *TreeNode) GetChildren() []*TreeNode {
 
 func (t *TreeNode) CheckIsLeaf() bool {
 	return len(t.children) == 0
+}
+
+func (t *TreeNode) GetRows() []int {
+	rows := make([]int, len(t.extra.items))
+	for i, item := range t.extra.items {
+		rows[i] = item.row
+	}
+
+	return rows
 }
 
 func (t *TreeNode) CheckIsRoot() bool {
@@ -105,18 +122,14 @@ func (t *TreeNode) GetRank() int {
 	return t.rank
 }
 
-// GetRow get the row of the tree node in the raw model
-// only the leaf node has the row
-func (t *TreeNode) GetRow() int {
-	return t.row
-}
-
-func constructLevelNode(s string, parent *TreeNode, level int, row int) *TreeNode {
+func constructLevelNode(s string, parent *TreeNode, level int) *TreeNode {
 	node := &TreeNode{
 		value:  s,
 		parent: parent,
 		rank:   level,
-		row:    row,
+		extra: &TreeNodeExtra{
+			items: make([]*TreeNodeItem, 0),
+		},
 	}
 	parent.children = append(parent.children, node)
 	return node
