@@ -8,11 +8,13 @@ import (
 )
 
 type TreeImportFramework struct {
-	db               *gorm.DB
-	recorder         *util.UnexpectedRecorder
-	cfg              *TreeImportCfg
-	nodes            map[string]*TreeNode
-	levelImporter    []LevelImporter
+	db            *gorm.DB
+	recorder      *util.UnexpectedRecorder
+	cfg           *TreeImportCfg
+	nodes         map[string]*TreeNode
+	levelImporter []LevelImporter
+	// the root importer
+	rootImporter     LevelImporter
 	ocfg             *treeImportOptionalCfg
 	progressReporter *util.ProgressReporter
 	postHandler      excel_import.PostHandler
@@ -37,10 +39,10 @@ func NewTreeImportStrictOrderFramework(db *gorm.DB, treeBoundary, colCount int, 
 		LevelOrder:   levelOrder,
 		ColumnCount:  colCount,
 	}
-	return NewTreeImportFramework(db, cfg, levelImporter, options...)
+	return NewTreeImportFramework(db, cfg, importer, levelImporter, options...)
 }
 
-func NewTreeImportFramework(db *gorm.DB, cfg *TreeImportCfg, levelImporter []LevelImporter, options ...OptionFunc) *TreeImportFramework {
+func NewTreeImportFramework(db *gorm.DB, cfg *TreeImportCfg, rootImporter LevelImporter, levelImporter []LevelImporter, options ...OptionFunc) *TreeImportFramework {
 	if cfg == nil {
 		panic("cfg should not nil")
 	}
@@ -59,6 +61,7 @@ func NewTreeImportFramework(db *gorm.DB, cfg *TreeImportCfg, levelImporter []Lev
 		cfg:              cfg,
 		nodes:            make(map[string]*TreeNode),
 		levelImporter:    levelImporter,
+		rootImporter:     rootImporter,
 		ocfg:             defaultOptCfg,
 		recorder:         util.NewDefaultUnexpectedRecorder(),
 		progressReporter: util.NewProgressReporter(true),
@@ -232,12 +235,11 @@ func (t *TreeImportFramework) parseRawWhole(content [][]string) (*rawCellWhole, 
 	totalNodeCount := t.calculateTotalNodeCount(root)
 
 	return &rawCellWhole{
-		contents:     content,
-		cellContents: cellContents,
-		root:         root,
-		// exclude the root node
-		totalModelCount: totalNodeCount - 1,
-		models:          models,
+		contents:       content,
+		cellContents:   cellContents,
+		root:           root,
+		totalNodeCount: totalNodeCount,
+		models:         models,
 	}, nil
 }
 
@@ -282,12 +284,17 @@ func (t *TreeImportFramework) checkIsLeaf(i int, row []string) bool {
 }
 
 func (t *TreeImportFramework) importTree(whole *rawCellWhole) error {
-	t.progressReporter.StartProgress(whole.totalModelCount)
+	t.progressReporter.StartProgress(whole.GetNodeCount())
 
 	root := whole.root
 
+	// import the root
+	if err := t.importLevelNode(t.rootImporter, root); err != nil {
+		return err
+	}
+
 	// import the tree
-	nodes := []*TreeNode{root}
+	nodes := root.GetChildren()
 	for _, importer := range t.levelImporter {
 		nextNodes := make([]*TreeNode, 0)
 		for _, node := range nodes {
@@ -304,6 +311,10 @@ func (t *TreeImportFramework) importTree(whole *rawCellWhole) error {
 }
 
 func (t *TreeImportFramework) importLevelNode(importer LevelImporter, node *TreeNode) error {
+	if node == nil || importer == nil {
+		return nil
+	}
+
 	status := util.ProgressStatusSuccess
 	defer t.progressReporter.CommitProgress(1, status)
 	if err := importer.ImportLevelNode(t.db, node); err != nil {

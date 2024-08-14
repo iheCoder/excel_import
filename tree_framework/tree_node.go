@@ -21,11 +21,11 @@ type rawCellContent struct {
 }
 
 type rawCellWhole struct {
-	contents        [][]string
-	cellContents    [][]rawCellContent
-	root            *TreeNode
-	totalModelCount int
-	models          []any
+	contents       [][]string
+	cellContents   [][]rawCellContent
+	root           *TreeNode
+	totalNodeCount int
+	models         []any
 }
 
 func (r *rawCellWhole) GetRoot() *TreeNode {
@@ -33,7 +33,7 @@ func (r *rawCellWhole) GetRoot() *TreeNode {
 }
 
 func (r *rawCellWhole) GetNodeCount() int {
-	return r.totalModelCount
+	return r.totalNodeCount
 }
 
 func (r *rawCellWhole) GetLeafCount() int {
@@ -123,6 +123,7 @@ func constructLevelNode(s string, parent *TreeNode, level int, row int) *TreeNod
 }
 
 type TreeImportCfg struct {
+	// the tree level order of the tree node
 	LevelOrder []int
 	// the TreeBoundary of the tree node. the last index that belongs to the tree
 	TreeBoundary int
