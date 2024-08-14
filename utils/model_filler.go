@@ -107,15 +107,17 @@ func FillModel(model interface{}, values []string, fieldOrders []int) error {
 	v = v.Elem()
 
 	// 检查字段数量是否匹配
-	n := v.NumField()
+	fieldNum := v.NumField()
 
 	// 检查字段顺序是否正确
+	valNums := len(values)
 	for _, order := range fieldOrders {
-		if order < 0 || order >= len(values) {
+		if order < 0 || order >= valNums {
 			return errors.New("field order is out of range")
 		}
 	}
 
+	n := min(fieldNum, valNums)
 	// 根据字段信息设置字段值
 	for i := 0; i < n; i++ {
 		if err := setField(v, i, values[fieldOrders[i]]); err != nil {
