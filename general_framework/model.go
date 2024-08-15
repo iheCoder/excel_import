@@ -34,4 +34,9 @@ type ImportControl struct {
 
 var defaultImportControl = ImportControl{
 	StartRow: 1,
+	Ef:       defaultRawEndFunc,
+}
+
+func defaultRawEndFunc(s []string) bool {
+	return len(s) == 0 || len(s[0]) == 0
 }
