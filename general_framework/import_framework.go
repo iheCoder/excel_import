@@ -51,6 +51,22 @@ func WithRowRawModel(rrm excel_import.RowModelFactory) OptionFunc {
 	}
 }
 
+func WithOneSectionPostHandlers(postHandler excel_import.PostHandler) OptionFunc {
+	return func(framework *ImportFramework) {
+		framework.postHandlers = map[RowType]excel_import.PostHandler{
+			ImportFrameworkOneSectionType: postHandler,
+		}
+	}
+}
+
+func WithOneSectionCheckers(checker SectionChecker) OptionFunc {
+	return func(framework *ImportFramework) {
+		framework.checkers = map[RowType]SectionChecker{
+			ImportFrameworkOneSectionType: checker,
+		}
+	}
+}
+
 func NewImporterFramework(db *gorm.DB, importers map[RowType]SectionImporter, recognizer SectionRecognizer, options ...OptionFunc) *ImportFramework {
 	ki := &ImportFramework{
 		db:               db,
