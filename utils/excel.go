@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"github.com/tealeg/xlsx"
+	"github.com/xuri/excelize/v2"
 	"io"
 	"os"
 	"path/filepath"
@@ -346,4 +347,33 @@ func DivideMultipleTreesIntoMultipleTables(path, outputDir string, ukColIndex []
 	}
 
 	return filePaths, nil
+}
+
+// SetHyperlinksInColumn 将 Excel 文件中指定列的单元格内容设置为超链接
+func SetHyperlinksInColumn(path string, urls []string, index int) error {
+	// 打开Excel文件
+	f, err := excelize.OpenFile(path)
+	if err != nil {
+		return fmt.Errorf("failed to open Excel file: %w", err)
+	}
+
+	// 假设我们只处理第一个工作表
+	sheetName := f.GetSheetName(0)
+
+	// 将urls写入指定列，并设置为超链接
+	for i, url := range urls {
+		// skip header
+		cell, _ := excelize.CoordinatesToCellName(index+1, i+1+1)
+		f.SetCellValue(sheetName, cell, url)
+		if err := f.SetCellHyperLink(sheetName, cell, url, "External"); err != nil {
+			return fmt.Errorf("failed to set hyperlink: %w", err)
+		}
+	}
+
+	// 保存文件
+	if err := f.Save(); err != nil {
+		return fmt.Errorf("failed to save Excel file: %w", err)
+	}
+
+	return nil
 }

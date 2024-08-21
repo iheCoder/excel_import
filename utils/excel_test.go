@@ -68,3 +68,21 @@ func TestDivideMultipleTreesIntoMultipleTables(t *testing.T) {
 
 	t.Log("done")
 }
+
+func TestSetHyperlinksInColumn(t *testing.T) {
+	path := "../testdata/excel_test_data.xlsx"
+	urls := []string{
+		"https://www.baidu.com",
+		"https://www.google.com",
+		"https://www.bing.com",
+		"https://www.yahoo.com",
+		"https://www.sogou.com",
+	}
+	index := 2
+
+	if err := SetHyperlinksInColumn(path, urls, index); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log("done")
+}
