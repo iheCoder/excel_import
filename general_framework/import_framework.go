@@ -176,7 +176,7 @@ func (k *ImportFramework) parseRawWhole(contents [][]string) (*rawWhole, error) 
 		var model any
 		if k.rowRawModel != nil {
 			model = k.rowRawModel.GetModel()
-			if err := util.FillModelOrder(model, content); err != nil {
+			if err := util.FillModelByTag(model, content); err != nil {
 				return nil, err
 			}
 		}

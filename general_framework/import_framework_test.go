@@ -71,3 +71,46 @@ func (di *simpleTestDataImporter) GetModel() any {
 func psr(s []string) RowType {
 	return personSectionType
 }
+
+func TestImportFramework_ImportOneSectionWithTag(t *testing.T) {
+	stdi := &simpleTestDataWithTagImporter{}
+	fac := &personWithTagFac{}
+	framework := NewImporterOneSectionFramework(nil, stdi, WithRowRawModel(fac))
+	path := "../testdata/excel_test_tag.xlsx"
+
+	err := framework.Import(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, p := range stdi.persons {
+		t.Log(p)
+	}
+	t.Log("done")
+}
+
+type simpleTestDataWithTagImporter struct {
+	persons []*PersonWithTag
+}
+
+func (di *simpleTestDataWithTagImporter) ImportSection(tx *gorm.DB, s *RawContent) error {
+	di.persons = append(di.persons, s.Model.(*PersonWithTag))
+	return nil
+}
+
+type personWithTagFac struct {
+}
+
+func (mf *personWithTagFac) GetModel() any {
+	return &PersonWithTag{}
+}
+
+func (mf *personWithTagFac) MinColumnCount() int {
+	return 6
+}
+
+type PersonWithTag struct {
+	Name   string `excel:"index:0"`
+	Career string `excel:"index:2"`
+	Degree string `excel:"index:4"`
+}

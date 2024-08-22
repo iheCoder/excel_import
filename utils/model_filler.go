@@ -95,6 +95,17 @@ func FillModelOrder(model any, values []string) error {
 	return FillModel(model, values, fieldOrders)
 }
 
+// FillModelByTag fill model by tag
+func FillModelByTag(model any, values []string) error {
+	attrs := ParseTag(model)
+	fieldOrders := make([]int, len(attrs))
+	for i, attr := range attrs {
+		fieldOrders[i] = attr.ColumnIndex
+	}
+
+	return FillModel(model, values, fieldOrders)
+}
+
 func FillModel(model interface{}, values []string, fieldOrders []int) error {
 	v := reflect.ValueOf(model)
 
