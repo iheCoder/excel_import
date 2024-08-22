@@ -221,7 +221,7 @@ func (t *TreeImportFramework) parseRawWhole(content [][]string) (*rawCellWhole, 
 		var model any
 		if t.cfg.ModelFac != nil {
 			model = t.cfg.ModelFac.GetModel()
-			if err = util.FillModelOrder(model, row); err != nil {
+			if err = util.FillModelByTag(model, row); err != nil {
 				return nil, err
 			}
 		}
