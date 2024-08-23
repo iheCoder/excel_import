@@ -187,8 +187,12 @@ func (t *TreeImportFramework) preHandleRawContent(contents [][]string) [][]strin
 		}
 
 		// format the cell
+		fc := util.FormatCell
+		if t.ocfg.cellFormatFunc != nil {
+			fc = t.ocfg.cellFormatFunc
+		}
 		for j, cell := range row {
-			row[j] = util.FormatCell(cell)
+			row[j] = fc(cell)
 		}
 
 		contents[i] = row

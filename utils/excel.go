@@ -111,10 +111,6 @@ func readXLSX(path string) ([][]string, error) {
 	return records, nil
 }
 
-func FormatCell(cell string) string {
-	return strings.TrimSpace(cell)
-}
-
 // DivideSheetsIntoTables 将Excel文件中的每个Sheet拆分为单独的文件，并返回拆分后的文件绝对路径
 func DivideSheetsIntoTables(path string) ([]string, error) {
 	f, err := xlsx.OpenFile(path)

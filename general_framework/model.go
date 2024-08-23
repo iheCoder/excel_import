@@ -1,5 +1,7 @@
 package general_framework
 
+import "excel_import"
+
 type RowType string
 type ColumnType int
 
@@ -30,6 +32,8 @@ type ImportControl struct {
 	EnableParallel bool
 	// the max parallel number
 	MaxParallel int
+	// the cell format function
+	CellFormatFunc excel_import.CellFormatter
 }
 
 var defaultImportControl = ImportControl{

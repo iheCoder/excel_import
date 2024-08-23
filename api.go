@@ -18,3 +18,5 @@ type PostHandler interface {
 	// PostHandle post handle the section.
 	PostHandle(tx *gorm.DB) error
 }
+
+type CellFormatter func(s string) string

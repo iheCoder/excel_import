@@ -154,6 +154,8 @@ type treeImportOptionalCfg struct {
 	ef RowEndFunc
 	// the end condition of the tree column
 	treeColEndFunc ColEndFunc
+	// the cell format function
+	cellFormatFunc excel_import.CellFormatter
 }
 
 func genNodeKey(s []string, level int) string {

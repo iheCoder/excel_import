@@ -156,8 +156,12 @@ func (k *ImportFramework) preHandleRawContent(contents [][]string) [][]string {
 		}
 
 		// format the cell
+		fc := util.FormatCell
+		if k.control.CellFormatFunc != nil {
+			fc = k.control.CellFormatFunc
+		}
 		for j, cell := range content {
-			content[j] = util.FormatCell(cell)
+			content[j] = fc(cell)
 		}
 
 		contents[i] = content
