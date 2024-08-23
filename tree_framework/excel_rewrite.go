@@ -10,13 +10,19 @@ type ExcelRewriterTreeMiddleware struct {
 	path     string
 	contents map[int][]string
 	attrs    []*excel_import.ExcelImportTagAttr
+	startRow int
 }
 
 func NewExcelRewriterTreeMiddleware(path string) *ExcelRewriterTreeMiddleware {
 	return &ExcelRewriterTreeMiddleware{
 		path:     path,
 		contents: make(map[int][]string),
+		startRow: 1,
 	}
+}
+
+func (e *ExcelRewriterTreeMiddleware) SetStartRow(startRow int) {
+	e.startRow = startRow
 }
 
 // PreImportHandle init excel import tag attr
@@ -67,5 +73,5 @@ func (e *ExcelRewriterTreeMiddleware) PostLevelImportHandle(tx *gorm.DB, node *T
 }
 
 func (e *ExcelRewriterTreeMiddleware) PostHandle(tx *gorm.DB) error {
-	return util.WriteExcelColumnContent(e.path, e.contents)
+	return util.WriteExcelColumnContentByStartRow(e.path, e.contents, e.startRow)
 }
