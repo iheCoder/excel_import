@@ -9,7 +9,7 @@ import (
 // GetFieldString get the string value of a field in a struct
 func GetFieldString(m any, i int) (string, error) {
 	if m == nil {
-		return "", errors.New("model is nil")
+		return "", nil
 	}
 	v := reflect.ValueOf(m)
 	if v.Kind() != reflect.Ptr || v.Elem().Kind() != reflect.Struct {

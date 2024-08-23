@@ -79,6 +79,17 @@ func (t *TreeNode) GetItem() any {
 	return t.extra.items[0].item
 }
 
+// GetItems get the items of the tree node
+// the items is the raw model of the tree node, usually the leaf node has the item
+func (t *TreeNode) GetItems() []any {
+	items := make([]any, len(t.extra.items))
+	for i, item := range t.extra.items {
+		items[i] = item.item
+	}
+
+	return items
+}
+
 func (t *TreeNode) GetValue() string {
 	return t.value
 }

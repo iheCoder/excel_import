@@ -38,3 +38,26 @@ func (e *ExcelRewriterMiddleware) PreImportHandle(tx *gorm.DB, info tree_framewo
 
 	return nil
 }
+
+func (e *ExcelRewriterMiddleware) PostLevelImportHandle(tx *gorm.DB, node *tree_framework.TreeNode) error {
+	// get models
+	models := node.GetItems()
+
+	// iterate models and write to content
+	for i, attr := range e.attrs {
+		if !attr.Rewrite || attr.ColumnIndex < 0 {
+			continue
+		}
+
+		for _, model := range models {
+			s, err := util.GetFieldString(model, i)
+			if err != nil {
+				return err
+			}
+
+			e.contents[attr.ColumnIndex] = append(e.contents[attr.ColumnIndex], s)
+		}
+	}
+
+	return nil
+}
