@@ -1,7 +1,9 @@
 package tree_framework
 
 import (
+	util "excel_import/utils"
 	"gorm.io/gorm"
+	"strconv"
 	"testing"
 )
 
@@ -159,10 +161,10 @@ func (mf *modelTagFac) MinColumnCount() int {
 }
 
 type rawTagModel struct {
-	L1  string `excel:"index:1"`
-	L2  string `excel:"index:3"`
-	L3  string `excel:"index:4"`
-	Key string `excel:"index:5"`
+	L1  string `exi:"index:1"`
+	L2  string `exi:"index:3"`
+	L3  string `exi:"index:4"`
+	Key string `exi:"index:5"`
 }
 
 type simpleTestDataTagImporter struct {
@@ -174,6 +176,85 @@ func (si *simpleTestDataTagImporter) ImportLevelNode(tx *gorm.DB, node *TreeNode
 	si.msvs = append(si.msvs, node.GetValue())
 	if node.CheckIsLeaf() {
 		si.leafs = append(si.leafs, &rawTagModel{})
+	}
+
+	return nil
+}
+
+func TestTreeImportFramework_ImportWithExcelRewriteMiddleware(t *testing.T) {
+	path := "../testdata/excel_tree_test_rewrite.xlsx"
+	mf := &modelRewriteFac{}
+	si := &simpleTestDataRewriteImporter{}
+	cfg := &TreeImportCfg{
+		LevelOrder:   []int{1, 3, 4},
+		TreeBoundary: 4,
+		ModelFac:     mf,
+		ColumnCount:  7,
+	}
+	excelRewriteMiddleware := NewExcelRewriterTreeMiddleware(path)
+
+	tif := NewTreeImportFramework(nil, cfg, nil, []LevelImporter{si, si, si}, WithMiddlewares(excelRewriteMiddleware))
+	err := tif.Import(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(si.leafs) != 5 || len(si.msvs) != 11 {
+		t.Fatalf("leafs length is %d, models length is %d", len(si.leafs), len(si.msvs))
+	}
+
+	// read leaf id from excel and check it
+	leafIDColumnIndex := 6
+	expectedLeafIDs := []int{0, 1, 2, 3, 4, 4}
+	contents, err := util.ReadExcelContent(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for i, d := range expectedLeafIDs {
+		if contents[i+1][leafIDColumnIndex] != strconv.Itoa(d) {
+			t.Fatalf("leaf id is %s, expect %d", contents[i+1][leafIDColumnIndex], d)
+		}
+	}
+
+	t.Log("done")
+}
+
+type rawRewriteModel struct {
+	L1     string `exi:"index:1"`
+	L2     string `exi:"index:3"`
+	L3     string `exi:"index:4"`
+	Key    string `exi:"index:5"`
+	LeafID int    `exi:"index:6,rewrite:true"`
+}
+
+type modelRewriteFac struct {
+}
+
+func (mf *modelRewriteFac) GetModel() any {
+	return &rawRewriteModel{}
+}
+
+func (mf *modelRewriteFac) MinColumnCount() int {
+	return 7
+}
+
+type simpleTestDataRewriteImporter struct {
+	leafs  []*rawRewriteModel
+	msvs   []string
+	leafID int
+}
+
+func (si *simpleTestDataRewriteImporter) ImportLevelNode(tx *gorm.DB, node *TreeNode) error {
+	si.msvs = append(si.msvs, node.GetValue())
+	if node.CheckIsLeaf() {
+		si.leafs = append(si.leafs, &rawRewriteModel{})
+		models := node.GetItems()
+		for _, model := range models {
+			m := model.(*rawRewriteModel)
+			m.LeafID = si.leafID
+		}
+		si.leafID++
 	}
 
 	return nil
