@@ -61,3 +61,7 @@ func (e *ExcelRewriterMiddleware) PostLevelImportHandle(tx *gorm.DB, node *tree_
 
 	return nil
 }
+
+func (e *ExcelRewriterMiddleware) PostHandle(tx *gorm.DB) error {
+	return util.WriteExcelColumnContent(e.path, e.contents)
+}
