@@ -7,14 +7,14 @@ import (
 )
 
 type ParseTagTest1 struct {
-	A string `excel:"index:1"`
-	B string `excel:"index:3"`
-	C string `excel:"index:5"`
+	A string `exi:"index:1,rewrite:true"`
+	B string `exi:"index:3"`
+	C string `exi:"index:5"`
 }
 type ParseTagTest2 struct {
-	A string `excel:"index:1"`
+	A string `exi:"index:1"`
 	B string
-	C string `excel:"index:3"`
+	C string `exi:"index:3,rewrite:true"`
 }
 type ParseTagTest3 struct {
 	A string
@@ -34,6 +34,7 @@ func TestParseTag(t *testing.T) {
 			expected: []*excel_import.ExcelImportTagAttr{
 				{
 					ColumnIndex: 1,
+					Rewrite:     true,
 				},
 				{
 					ColumnIndex: 3,
@@ -54,6 +55,7 @@ func TestParseTag(t *testing.T) {
 				},
 				{
 					ColumnIndex: 3,
+					Rewrite:     true,
 				},
 			},
 		},

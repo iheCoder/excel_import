@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	excelImportTag = "excel"
+	excelImportTag = "exi"
 	invalidIndex   = -1
 )
 
@@ -83,6 +83,11 @@ func parseTag(tag string) *excel_import.ExcelImportTagAttr {
 			ci, err := strconv.Atoi(value)
 			if err == nil {
 				tagAttr.ColumnIndex = ci
+			}
+		case "rewrite":
+			rw, err := strconv.ParseBool(value)
+			if err == nil {
+				tagAttr.Rewrite = rw
 			}
 		}
 	}
