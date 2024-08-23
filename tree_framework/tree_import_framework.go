@@ -19,6 +19,7 @@ type TreeImportFramework struct {
 	progressReporter *util.ProgressReporter
 	postHandler      excel_import.PostHandler
 	preHandler       TreePreHandler
+	middlewares      []TreeMiddleware
 }
 
 func NewTreeImportStrictOrderFramework(db *gorm.DB, treeBoundary, colCount int, modelFac excel_import.RowModelFactory, importer LevelImporter, options ...OptionFunc) *TreeImportFramework {
@@ -114,16 +115,24 @@ func WithPreHandler(ph TreePreHandler) OptionFunc {
 	}
 }
 
+func WithMiddlewares(middlewares ...TreeMiddleware) OptionFunc {
+	return func(framework *TreeImportFramework) {
+		framework.middlewares = middlewares
+	}
+}
+
 func (t *TreeImportFramework) Import(path string) error {
 	defer t.recorder.Flush()
 	defer t.progressReporter.Report()
 
+	// parse the content
 	whole, err := t.parseContent(path)
 	if err != nil {
 		fmt.Printf("parse file content failed: %v\n", err)
 		return err
 	}
 
+	// pre handle the content
 	if t.preHandler != nil {
 		err = t.preHandler.PreImportHandle(t.db, whole)
 		if err != nil {
@@ -132,12 +141,30 @@ func (t *TreeImportFramework) Import(path string) error {
 		}
 	}
 
+	// middleware pre handle
+	for _, middleware := range t.middlewares {
+		if err = middleware.PreImportHandle(t.db, whole); err != nil {
+			fmt.Printf("middleware pre handle failed: %v\n", err)
+			return err
+		}
+	}
+
+	// import the tree
 	err = t.importTree(whole)
 	if err != nil {
 		fmt.Printf("import tree failed: %v\n", err)
 		return err
 	}
 
+	// middleware post handle
+	for _, middleware := range t.middlewares {
+		if err = middleware.PostHandle(t.db); err != nil {
+			fmt.Printf("middleware post handle failed: %v\n", err)
+			return err
+		}
+	}
+
+	// post handle
 	if t.postHandler != nil {
 		err = t.postHandler.PostHandle(t.db)
 		if err != nil {
@@ -334,6 +361,13 @@ func (t *TreeImportFramework) importLevelNode(importer LevelImporter, node *Tree
 		t.recorder.RecordImportError(util.CombineRowsErrors(node.GetRows(), err))
 		status = util.ProgressStatusFailed
 		return err
+	}
+
+	for _, middleware := range t.middlewares {
+		if err := middleware.PostLevelImportHandle(t.db, node); err != nil {
+			fmt.Printf("middleware post level import failed: %v\n", err)
+			return err
+		}
 	}
 
 	return nil
