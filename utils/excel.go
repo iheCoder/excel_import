@@ -13,14 +13,23 @@ import (
 
 type ExcelOpenMode int32
 
+const (
+	defaultStartRow = 1
+)
+
 // WriteExcelColumnContent 写入Excel列内容，支持CSV和XLSX格式
 func WriteExcelColumnContent(path string, content map[int][]string) error {
+	return WriteExcelColumnContentByStartRow(path, content, defaultStartRow)
+}
+
+// WriteExcelColumnContentByStartRow 写入Excel列内容，支持CSV和XLSX格式，支持指定起始行
+func WriteExcelColumnContentByStartRow(path string, content map[int][]string, startRow int) error {
 	ext := strings.ToLower(filepath.Ext(path))
 	switch ext {
 	case ".csv":
-		return writeCSV(path, content)
+		return writeCSVByStartRow(path, content, startRow)
 	case ".xlsx":
-		return writeXLSX(path, content)
+		return writeXLSXByStartRow(path, content, startRow)
 	default:
 		return fmt.Errorf("unsupported file type: %s", ext)
 	}
@@ -30,7 +39,15 @@ func writeCSV(path string, content map[int][]string) error {
 	return nil
 }
 
+func writeCSVByStartRow(path string, content map[int][]string, startRow int) error {
+	return nil
+}
+
 func writeXLSX(path string, content map[int][]string) error {
+	return writeXLSXByStartRow(path, content, defaultStartRow)
+}
+
+func writeXLSXByStartRow(path string, content map[int][]string, startRow int) error {
 	f, err := xlsx.OpenFile(path)
 	if err != nil {
 		return err
@@ -48,7 +65,7 @@ func writeXLSX(path string, content map[int][]string) error {
 	for i, col := range content {
 		for j, cell := range col {
 			// skip header
-			sheet.Cell(j+1, i).SetString(cell)
+			sheet.Cell(j+startRow, i).SetString(cell)
 		}
 	}
 
