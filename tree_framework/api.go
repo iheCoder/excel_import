@@ -1,10 +1,18 @@
 package tree_framework
 
-import "gorm.io/gorm"
+import (
+	"excel_import"
+	"gorm.io/gorm"
+)
 
 type LevelImporter interface {
 	// ImportLevelNode import level tree node
 	ImportLevelNode(tx *gorm.DB, node *TreeNode) error
+}
+
+type LevelImportPostHandler interface {
+	// PostLevelImportHandle post handle the level
+	PostLevelImportHandle(tx *gorm.DB, node *TreeNode) error
 }
 
 type TreePreHandler interface {
@@ -21,6 +29,12 @@ type TreeInfo interface {
 	GetLeafCount() int
 	// GetModels return the models of the tree
 	GetModels() []any
+}
+
+type TreeMiddleware interface {
+	TreePreHandler
+	LevelImportPostHandler
+	excel_import.PostHandler
 }
 
 type GenerateNodeKey func(s []string, level int) string
