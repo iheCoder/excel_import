@@ -38,3 +38,24 @@ func (e *ExcelRewriterMiddleware) PreImportHandle(tx *gorm.DB, content *RawConte
 
 	return nil
 }
+
+func (e *ExcelRewriterMiddleware) PostImportSectionHandle(tx *gorm.DB, s *RawContent) error {
+	// get models
+	model := s.Model
+
+	// iterate models and write to content
+	for i, attr := range e.attrs {
+		if !attr.Rewrite || attr.ColumnIndex < 0 {
+			continue
+		}
+
+		// write to content
+		c, err := util.GetFieldString(model, attr.ColumnIndex)
+		if err != nil {
+			return err
+		}
+		e.contents[i] = append(e.contents[i], c)
+	}
+
+	return nil
+}
