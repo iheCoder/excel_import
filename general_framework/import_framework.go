@@ -25,6 +25,7 @@ type ImportFramework struct {
 	rowRawModel      excel_import.RowModelFactory
 	control          ImportControl
 	progressReporter *util.ProgressReporter
+	middlewares      []GeneralMiddleware
 }
 
 func WithPostHandlers(postHandlers map[RowType]excel_import.PostHandler) OptionFunc {
@@ -64,6 +65,12 @@ func WithOneSectionCheckers(checker SectionChecker) OptionFunc {
 		framework.checkers = map[RowType]SectionChecker{
 			ImportFrameworkOneSectionType: checker,
 		}
+	}
+}
+
+func WithMiddlewares(middlewares ...GeneralMiddleware) OptionFunc {
+	return func(framework *ImportFramework) {
+		framework.middlewares = middlewares
 	}
 }
 
@@ -110,9 +117,23 @@ func (k *ImportFramework) Import(path string) error {
 		return err
 	}
 
+	for _, middleware := range k.middlewares {
+		if err = middleware.PreImportHandle(k.db, content); err != nil {
+			fmt.Printf("middleware pre handle failed: %v\n", err)
+			return err
+		}
+	}
+
 	if err = k.importContent(content); err != nil {
 		fmt.Printf("import content failed: %v\n", err)
 		return err
+	}
+
+	for _, middleware := range k.middlewares {
+		if err = middleware.PostHandle(k.db); err != nil {
+			fmt.Printf("middleware post handle failed: %v\n", err)
+			return err
+		}
 	}
 
 	if err = k.postHandle(); err != nil {
@@ -123,7 +144,7 @@ func (k *ImportFramework) Import(path string) error {
 	return nil
 }
 
-func (k *ImportFramework) parseContent(path string) (*rawWhole, error) {
+func (k *ImportFramework) parseContent(path string) (*RawWhole, error) {
 	content, err := util.ReadExcelContent(path)
 	if err != nil {
 		return nil, err
@@ -170,7 +191,7 @@ func (k *ImportFramework) preHandleRawContent(contents [][]string) [][]string {
 	return contents
 }
 
-func (k *ImportFramework) parseRawWhole(contents [][]string) (*rawWhole, error) {
+func (k *ImportFramework) parseRawWhole(contents [][]string) (*RawWhole, error) {
 	rawContents := make([]*RawContent, 0, len(contents))
 	for i, content := range contents {
 		// recognize the section type
@@ -193,12 +214,12 @@ func (k *ImportFramework) parseRawWhole(contents [][]string) (*rawWhole, error) 
 		})
 	}
 
-	return &rawWhole{
+	return &RawWhole{
 		rawContents: rawContents,
 	}, nil
 }
 
-func (k *ImportFramework) checkContent(whole *rawWhole) error {
+func (k *ImportFramework) checkContent(whole *RawWhole) error {
 	var err error
 	var checkFailed bool
 	for i, rc := range whole.rawContents {
@@ -241,7 +262,7 @@ func (k *ImportFramework) checkTypeError(rc *RawContent) error {
 	return util.CheckModelOrder(k.rowRawModel.GetModel(), rc.Content)
 }
 
-func (k *ImportFramework) importContent(whole *rawWhole) error {
+func (k *ImportFramework) importContent(whole *RawWhole) error {
 	k.progressReporter.StartProgress(len(whole.rawContents))
 
 	if k.checkAllowImportParallel() {
@@ -251,7 +272,7 @@ func (k *ImportFramework) importContent(whole *rawWhole) error {
 	return k.importContentSerial(whole)
 }
 
-func (k *ImportFramework) importContentParallel(whole *rawWhole) error {
+func (k *ImportFramework) importContentParallel(whole *RawWhole) error {
 	maxParallel := k.control.MaxParallel
 	eg, _ := errgroup.WithContext(context.Background())
 	eg.SetLimit(maxParallel)
@@ -281,7 +302,7 @@ func (k *ImportFramework) importContentParallel(whole *rawWhole) error {
 	return nil
 }
 
-func (k *ImportFramework) importContentSerial(whole *rawWhole) error {
+func (k *ImportFramework) importContentSerial(whole *RawWhole) error {
 	for _, content := range whole.rawContents {
 		sectionType := content.SectionType
 		importer, ok := k.importers[sectionType]
@@ -307,6 +328,14 @@ func (k *ImportFramework) importSection(importer SectionImporter, content *RawCo
 		fmt.Printf("import row %d section failed: %v\n", content.Row, err)
 		k.recorder.RecordImportError(util.CombineErrors(content.Row, err))
 		return err
+	}
+
+	// middleware post handle
+	for _, middleware := range k.middlewares {
+		if err := middleware.PostImportSectionHandle(k.db, content); err != nil {
+			fmt.Printf("middleware post import section handle failed: %v\n", err)
+			return err
+		}
 	}
 
 	return nil
