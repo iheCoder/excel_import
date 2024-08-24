@@ -59,3 +59,12 @@ func (e *ExcelRewriterMiddleware) PostImportSectionHandle(tx *gorm.DB, s *RawCon
 
 	return nil
 }
+
+func (e *ExcelRewriterMiddleware) PostImportHandle(tx *gorm.DB) error {
+	// write to excel
+	if err := util.WriteExcelColumnContentByStartRow(e.path, e.contents, e.startRow); err != nil {
+		return err
+	}
+
+	return nil
+}

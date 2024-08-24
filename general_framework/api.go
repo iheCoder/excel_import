@@ -1,6 +1,9 @@
 package general_framework
 
-import "gorm.io/gorm"
+import (
+	"excel_import"
+	"gorm.io/gorm"
+)
 
 type SectionChecker interface {
 	// CheckValid checks the validity of the section.
@@ -15,3 +18,19 @@ type SectionImporter interface {
 
 // used for recognize row section
 type SectionRecognizer func(s []string) RowType
+
+type GeneralPreHandler interface {
+	// PreImportHandle pre import handle
+	PreImportHandle(tx *gorm.DB, s *RawContent) error
+}
+
+type SectionImportPostHandler interface {
+	// PostImportSectionHandle post import handle
+	PostImportSectionHandle(tx *gorm.DB, s *RawContent) error
+}
+
+type GeneralMiddleware interface {
+	GeneralPreHandler
+	SectionImportPostHandler
+	excel_import.PostHandler
+}
