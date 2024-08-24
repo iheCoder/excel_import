@@ -1,7 +1,9 @@
 package general_framework
 
 import (
+	util "excel_import/utils"
 	"gorm.io/gorm"
+	"strconv"
 	"testing"
 )
 
@@ -110,7 +112,61 @@ func (mf *personWithTagFac) MinColumnCount() int {
 }
 
 type PersonWithTag struct {
-	Name   string `excel:"index:0"`
-	Career string `excel:"index:2"`
-	Degree string `excel:"index:4"`
+	Name   string `exi:"index:0"`
+	Career string `exi:"index:2"`
+	Degree string `exi:"index:4"`
+}
+
+func TestImportFramework_ImportOneSectionWithRewrite(t *testing.T) {
+	path := "../testdata/excel_test_rewrite.xlsx"
+	stdi := &simpleTestDataSupportMiddlewareImporter{}
+	fac := &calculateExampleFac{}
+	rewriteMiddleware := NewExcelRewriterMiddleware(path)
+
+	framework := NewImporterOneSectionFramework(nil, stdi, WithRowRawModel(fac), WithMiddlewares(rewriteMiddleware))
+
+	err := framework.Import(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// read the rewritten content and check
+	expectedSum := []int{2, 5, 12, 5}
+	rewriteColIndex := 2
+	content, err := util.ReadExcelContent(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for i, s := range expectedSum {
+		if content[i+1][rewriteColIndex] != strconv.Itoa(s) {
+			t.Fatalf("sum is %s, expected %d", content[i][rewriteColIndex], s)
+		}
+	}
+}
+
+type calculateExample struct {
+	X   int `exi:"index:0"`
+	Y   int `exi:"index:1"`
+	Sum int `exi:"index:2,rewrite:true"`
+}
+
+type simpleTestDataSupportMiddlewareImporter struct {
+}
+
+func (di *simpleTestDataSupportMiddlewareImporter) ImportSection(tx *gorm.DB, s *RawContent) error {
+	model := s.Model.(*calculateExample)
+	model.Sum = model.X + model.Y
+	return nil
+}
+
+type calculateExampleFac struct {
+}
+
+func (mf *calculateExampleFac) GetModel() any {
+	return &calculateExample{}
+}
+
+func (mf *calculateExampleFac) MinColumnCount() int {
+	return 3
 }
