@@ -1,6 +1,10 @@
 package general_framework
 
-import "excel_import"
+import (
+	"excel_import"
+	util "excel_import/utils"
+	"gorm.io/gorm"
+)
 
 type ExcelRewriterMiddleware struct {
 	path     string
@@ -19,4 +23,18 @@ func NewExcelRewriterMiddleware(path string) *ExcelRewriterMiddleware {
 
 func (e *ExcelRewriterMiddleware) SetStartRow(startRow int) {
 	e.startRow = startRow
+}
+
+func (e *ExcelRewriterMiddleware) PreImportHandle(tx *gorm.DB, content *RawContent) error {
+	if content.Model == nil {
+		return nil
+	}
+
+	// get model excel import tag attr
+	attrs := util.ParseTag(content.Model)
+
+	// set attrs
+	e.attrs = attrs
+
+	return nil
 }
