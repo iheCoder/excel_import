@@ -21,7 +21,7 @@ type SectionRecognizer func(s []string) RowType
 
 type GeneralPreHandler interface {
 	// PreImportHandle pre import handle
-	PreImportHandle(tx *gorm.DB, s *RawContent) error
+	PreImportHandle(tx *gorm.DB, whole *RawWhole) error
 }
 
 type SectionImportPostHandler interface {

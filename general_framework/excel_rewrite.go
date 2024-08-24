@@ -25,13 +25,14 @@ func (e *ExcelRewriterMiddleware) SetStartRow(startRow int) {
 	e.startRow = startRow
 }
 
-func (e *ExcelRewriterMiddleware) PreImportHandle(tx *gorm.DB, content *RawContent) error {
-	if content.Model == nil {
+func (e *ExcelRewriterMiddleware) PreImportHandle(tx *gorm.DB, whole *RawWhole) error {
+	if whole == nil || len(whole.rawContents) == 0 {
 		return nil
 	}
+	model := whole.rawContents[0].Model
 
 	// get model excel import tag attr
-	attrs := util.ParseTag(content.Model)
+	attrs := util.ParseTag(model)
 
 	// set attrs
 	e.attrs = attrs

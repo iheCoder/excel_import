@@ -10,7 +10,7 @@ type FieldsOrder int
 type OptionFunc func(*ImportFramework)
 type EndFunc func(s []string) bool
 
-type rawWhole struct {
+type RawWhole struct {
 	rawContents []*RawContent
 }
 
