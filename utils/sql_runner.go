@@ -134,6 +134,40 @@ func GenerateInsertSQLWithValues(tableName string, v interface{}) string {
 	return query
 }
 
+func (r *SqlSentencesRunner) GenerateSqlUpdateSentences(updates, where map[string]any) error {
+	if r.sqlFile == nil {
+		err := r.initSqlFile()
+		if err != nil {
+			return err
+		}
+	}
+
+	// generate update sql sentences
+	sql := GenerateUpdateSQLWithValues(r.tableName, updates, where)
+
+	// write to file
+	_, err := r.sqlFile.WriteString(sql + "\n")
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func GenerateUpdateSQLWithValues(tableName string, updates, where map[string]any) string {
+	var updateStr []string
+	var whereStr []string
+	for k, v := range updates {
+		updateStr = append(updateStr, fmt.Sprintf("%s = %s", k, formatValue(reflect.ValueOf(v))))
+	}
+	for k, v := range where {
+		whereStr = append(whereStr, fmt.Sprintf("%s = %s", k, formatValue(reflect.ValueOf(v))))
+	}
+
+	query := fmt.Sprintf("UPDATE %s SET %s WHERE %s;", tableName, strings.Join(updateStr, ", "), strings.Join(whereStr, " AND "))
+	return query
+}
+
 // 判断是否为零值
 func isZero(v reflect.Value) bool {
 	return reflect.DeepEqual(v.Interface(), reflect.Zero(v.Type()).Interface())

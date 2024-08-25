@@ -104,3 +104,50 @@ func TestGenerateInsertSQLWithValues(t *testing.T) {
 		})
 	}
 }
+
+func TestGenerateUpdateSQLWithValues(t *testing.T) {
+	type testData struct {
+		updates map[string]any
+		where   map[string]any
+		sql     string
+	}
+
+	tests := []testData{
+		{
+			updates: map[string]any{
+				"name": "hello",
+				"age":  10,
+			},
+			where: map[string]any{
+				"name": "world",
+			},
+			sql: "UPDATE test_struct SET name = 'hello', age = 10 WHERE name = 'world';",
+		},
+		{
+			updates: map[string]any{
+				"name": "hello",
+			},
+			where: map[string]any{
+				"age": 10,
+			},
+			sql: "UPDATE test_struct SET name = 'hello' WHERE age = 10;",
+		},
+		{
+			updates: map[string]any{
+				"age": 10,
+			},
+			where: map[string]any{
+				"name": "world",
+			},
+			sql: "UPDATE test_struct SET age = 10 WHERE name = 'world';",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run("TestGenerateUpdateSQLWithValues", func(t *testing.T) {
+			if got := GenerateUpdateSQLWithValues("test_struct", tt.updates, tt.where); got != tt.sql {
+				t.Errorf("GenerateUpdateSQLWithValues() = %v, want %v", got, tt.sql)
+			}
+		})
+	}
+}
