@@ -19,6 +19,24 @@ type RawContent struct {
 	SectionType RowType
 	Content     []string
 	Model       any
+	effect      importEffect
+}
+
+func (r *RawContent) SetInsertModel(model any) {
+	r.effect.insertedModel = model
+}
+
+func (r *RawContent) SetUpdateCond(updates, wheres map[string]any) {
+	r.effect.updates = updates
+	r.effect.wheres = wheres
+}
+
+// the effect of the import
+type importEffect struct {
+	// the inserted model
+	insertedModel any
+	// the updated and where condition
+	updates, wheres map[string]any
 }
 
 type ImportControl struct {
