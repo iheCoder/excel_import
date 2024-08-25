@@ -7,6 +7,7 @@ import (
 
 const (
 	defaultCacheSize = 1000
+	defaultBatchSize = 1000
 )
 
 type SqlRunnerMiddleware struct {
@@ -53,6 +54,22 @@ func (s *SqlRunnerMiddleware) PostImportSectionHandle(tx *gorm.DB, rc *RawConten
 			return err
 		}
 		s.cache = s.cache[:0]
+	}
+
+	return nil
+}
+
+func (s *SqlRunnerMiddleware) PostImportHandle(tx *gorm.DB, whole *RawWhole) error {
+	// write the rest of sql
+	if len(s.cache) > 0 {
+		if err := s.runner.WriteSqlSentences(s.cache); err != nil {
+			return err
+		}
+	}
+
+	// execute sql
+	if s.enableExecuteDirect {
+		return s.runner.RunSqlSentencesWithBatch(defaultBatchSize)
 	}
 
 	return nil
