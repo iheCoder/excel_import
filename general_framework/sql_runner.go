@@ -28,3 +28,8 @@ func NewSqlRunnerMiddleware(sqlPath string, db *gorm.DB, tableName string, enabl
 		cache:               make([]string, 0, defaultCacheSize),
 	}
 }
+
+func (s *SqlRunnerMiddleware) PreImportHandle(tx *gorm.DB, whole *RawWhole) error {
+	// do nothing
+	return nil
+}
