@@ -37,9 +37,32 @@ func (r *SqlSentencesRunner) GenerateSqlInsertSentences(model any) error {
 	sql := GenerateInsertSQLWithValues(r.tableName, model)
 
 	// write to file
-	_, err := r.sqlFile.WriteString(sql + "\n")
+	_, err := r.sqlFile.WriteString(sql)
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (r *SqlSentencesRunner) TableName() string {
+	return r.tableName
+}
+
+func (r *SqlSentencesRunner) WriteSqlSentences(sqls []string) error {
+	if r.sqlFile == nil {
+		err := r.initSqlFile()
+		if err != nil {
+			return err
+		}
+	}
+
+	// write to file
+	for _, sql := range sqls {
+		_, err := r.sqlFile.WriteString(sql)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -130,7 +153,7 @@ func GenerateInsertSQLWithValues(tableName string, v interface{}) string {
 	columnsStr := strings.Join(columns, ", ")
 	valuesStr := strings.Join(values, ", ")
 
-	query := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s);", tableName, columnsStr, valuesStr)
+	query := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s);\n", tableName, columnsStr, valuesStr)
 	return query
 }
 
@@ -146,7 +169,7 @@ func (r *SqlSentencesRunner) GenerateSqlUpdateSentences(updates, where map[strin
 	sql := GenerateUpdateSQLWithValues(r.tableName, updates, where)
 
 	// write to file
-	_, err := r.sqlFile.WriteString(sql + "\n")
+	_, err := r.sqlFile.WriteString(sql)
 	if err != nil {
 		return err
 	}

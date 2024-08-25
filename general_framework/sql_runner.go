@@ -33,3 +33,27 @@ func (s *SqlRunnerMiddleware) PreImportHandle(tx *gorm.DB, whole *RawWhole) erro
 	// do nothing
 	return nil
 }
+
+func (s *SqlRunnerMiddleware) PostImportSectionHandle(tx *gorm.DB, rc *RawContent) error {
+	// generate insert sql if effect model is not nil
+	im := rc.GetInsertModel()
+	if im != nil {
+		s.cache = append(s.cache, util.GenerateInsertSQLWithValues(s.runner.TableName(), im))
+	}
+
+	// generate update sql if effect update is exists
+	upCond, whereCond := rc.GetUpdateCond()
+	if len(upCond) > 0 && len(whereCond) > 0 {
+		s.cache = append(s.cache, util.GenerateUpdateSQLWithValues(s.runner.TableName(), upCond, whereCond))
+	}
+
+	// write sql if cache is full
+	if len(s.cache) >= s.cacheSize {
+		if err := s.runner.WriteSqlSentences(s.cache); err != nil {
+			return err
+		}
+		s.cache = s.cache[:0]
+	}
+
+	return nil
+}

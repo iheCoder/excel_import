@@ -31,6 +31,14 @@ func (r *RawContent) SetUpdateCond(updates, wheres map[string]any) {
 	r.effect.wheres = wheres
 }
 
+func (r *RawContent) GetInsertModel() any {
+	return r.effect.insertedModel
+}
+
+func (r *RawContent) GetUpdateCond() (map[string]any, map[string]any) {
+	return r.effect.updates, r.effect.wheres
+}
+
 // the effect of the import
 type importEffect struct {
 	// the inserted model
