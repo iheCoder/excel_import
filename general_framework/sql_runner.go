@@ -59,7 +59,7 @@ func (s *SqlRunnerMiddleware) PostImportSectionHandle(tx *gorm.DB, rc *RawConten
 	return nil
 }
 
-func (s *SqlRunnerMiddleware) PostImportHandle(tx *gorm.DB, whole *RawWhole) error {
+func (s *SqlRunnerMiddleware) PostHandle(tx *gorm.DB) error {
 	// write the rest of sql
 	if len(s.cache) > 0 {
 		if err := s.runner.WriteSqlSentences(s.cache); err != nil {
