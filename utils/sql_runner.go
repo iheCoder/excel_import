@@ -187,7 +187,7 @@ func GenerateUpdateSQLWithValues(tableName string, updates, where map[string]any
 		whereStr = append(whereStr, fmt.Sprintf("%s = %s", k, formatValue(reflect.ValueOf(v))))
 	}
 
-	query := fmt.Sprintf("UPDATE %s SET %s WHERE %s;", tableName, strings.Join(updateStr, ", "), strings.Join(whereStr, " AND "))
+	query := fmt.Sprintf("UPDATE %s SET %s WHERE %s;\n", tableName, strings.Join(updateStr, ", "), strings.Join(whereStr, " AND "))
 	return query
 }
 
