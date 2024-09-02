@@ -26,6 +26,7 @@ type ImportFramework struct {
 	control          ImportControl
 	progressReporter *util.ProgressReporter
 	middlewares      []GeneralMiddleware
+	correctCheckers  []excel_import.CorrectnessChecker
 }
 
 func WithPostHandlers(postHandlers map[RowType]excel_import.PostHandler) OptionFunc {
@@ -94,6 +95,20 @@ func NewImporterFramework(db *gorm.DB, importers map[RowType]SectionImporter, re
 func (k *ImportFramework) WithOption(option OptionFunc) *ImportFramework {
 	option(k)
 	return k
+}
+
+// EnableCorrectnessCheck enable the correctness check.
+// must be called before Import.
+func (k *ImportFramework) EnableCorrectnessCheck(correctnessCheckers ...excel_import.CorrectnessChecker) error {
+	k.correctCheckers = correctnessCheckers
+
+	for _, checker := range k.correctCheckers {
+		if err := checker.PreCollect(k.db); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // NewImporterOneSectionFramework create a new ImportFramework with only one section type.
@@ -353,6 +368,16 @@ func (k *ImportFramework) checkAllowImportParallel() bool {
 func (k *ImportFramework) postHandle() error {
 	for _, handler := range k.postHandlers {
 		if err := handler.PostHandle(k.db); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (k *ImportFramework) CheckCorrect() error {
+	for _, checker := range k.correctCheckers {
+		if err := checker.CheckCorrect(k.db); err != nil {
 			return err
 		}
 	}
