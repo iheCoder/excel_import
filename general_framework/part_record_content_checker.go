@@ -1,8 +1,10 @@
 package general_framework
 
 import (
+	"errors"
 	"excel_import"
 	util "excel_import/utils"
+	"fmt"
 	"gorm.io/gorm"
 )
 
@@ -52,4 +54,57 @@ func (p *PartRecordContentChecker) PreCollect(tx *gorm.DB) error {
 	}
 
 	return nil
+}
+
+func (p *PartRecordContentChecker) CheckCorrect(tx *gorm.DB) error {
+	for _, oceItem := range p.oce {
+		// create new models
+		n := len(oceItem.Items)
+		models := createNewModels(oceItem.TableModel, n)
+
+		// get max offset
+		var maxOffset int
+		for _, item := range oceItem.Items {
+			if item.Offset > maxOffset {
+				maxOffset = item.Offset
+			}
+		}
+
+		// get maxOffset ids start from lastID
+		var ids []int64
+		err := tx.Model(oceItem.TableModel).Where("id > ?", oceItem.lastID).Order("id asc").Limit(maxOffset).Pluck("id", &ids).Error
+		if err != nil {
+			return err
+		}
+
+		if len(ids) != n {
+			return errors.New(fmt.Sprintf("id count unexpected, got %d, expected %d", len(ids), n))
+		}
+
+		// query models
+		for i := 0; i < n; i++ {
+			model := models[i]
+			if err = tx.First(model, ids[i]).Error; err != nil {
+				return err
+			}
+		}
+
+		// check models
+		for i, item := range oceItem.Items {
+			if err = util.CompareModel(models[i], item.ExpectedModel, oceItem.modelAttr); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func createNewModels(model any, count int) []any {
+	models := make([]any, count)
+	for i := 0; i < count; i++ {
+		models[i] = util.NewModel(model)
+	}
+
+	return models
 }
