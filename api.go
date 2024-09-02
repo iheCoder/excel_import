@@ -20,3 +20,10 @@ type PostHandler interface {
 }
 
 type CellFormatter func(s string) string
+
+type CorrectnessChecker interface {
+	// PreCollect pre collect the data.
+	PreCollect(tx *gorm.DB) error
+	// CheckCorrect check the correctness of the import.
+	CheckCorrect(tx *gorm.DB) error
+}
