@@ -172,3 +172,12 @@ func setField(v reflect.Value, i int, value string) error {
 
 	return nil
 }
+
+func NewModel(model any) any {
+	v := reflect.ValueOf(model)
+	if v.Kind() != reflect.Ptr || v.Elem().Kind() != reflect.Struct {
+		return nil
+	}
+
+	return reflect.New(v.Elem().Type()).Interface()
+}

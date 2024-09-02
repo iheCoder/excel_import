@@ -91,6 +91,11 @@ func NewImporterFramework(db *gorm.DB, importers map[RowType]SectionImporter, re
 	return ki
 }
 
+func (k *ImportFramework) WithOption(option OptionFunc) *ImportFramework {
+	option(k)
+	return k
+}
+
 // NewImporterOneSectionFramework create a new ImportFramework with only one section type.
 func NewImporterOneSectionFramework(db *gorm.DB, importer SectionImporter, options ...OptionFunc) *ImportFramework {
 	importers := map[RowType]SectionImporter{

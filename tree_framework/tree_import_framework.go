@@ -121,6 +121,11 @@ func WithMiddlewares(middlewares ...TreeMiddleware) OptionFunc {
 	}
 }
 
+func (t *TreeImportFramework) WithOption(option OptionFunc) *TreeImportFramework {
+	option(t)
+	return t
+}
+
 func (t *TreeImportFramework) Import(path string) error {
 	defer t.recorder.Flush()
 	defer t.progressReporter.Report()

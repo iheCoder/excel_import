@@ -51,11 +51,12 @@ func (e *ExcelRewriterMiddleware) PostImportSectionHandle(tx *gorm.DB, s *RawCon
 		}
 
 		// write to content
-		c, err := util.GetFieldString(model, attr.ColumnIndex)
+		c, err := util.GetFieldString(model, i)
 		if err != nil {
 			return err
 		}
-		e.contents[i] = append(e.contents[i], c)
+
+		e.contents[attr.ColumnIndex] = append(e.contents[attr.ColumnIndex], c)
 	}
 
 	return nil
