@@ -4,7 +4,6 @@ import (
 	"errors"
 	"excel_import"
 	util "excel_import/utils"
-	"fmt"
 	"gorm.io/gorm"
 )
 
@@ -77,14 +76,15 @@ func (p *PartRecordContentChecker) CheckCorrect(tx *gorm.DB) error {
 			return err
 		}
 
-		if len(ids) != n {
-			return errors.New(fmt.Sprintf("id count unexpected, got %d, expected %d", len(ids), n))
+		if len(ids) != maxOffset {
+			return errors.New("ids count is not equal to maxOffset")
 		}
 
 		// query models
 		for i := 0; i < n; i++ {
 			model := models[i]
-			if err = tx.First(model, ids[i]).Error; err != nil {
+			id := ids[oceItem.Items[i].Offset-1]
+			if err = tx.First(model, id).Error; err != nil {
 				return err
 			}
 		}
