@@ -89,6 +89,8 @@ func parseTag(tag string) *excel_import.ExcelImportTagAttr {
 			if err == nil {
 				tagAttr.Rewrite = rw
 			}
+		case "chk":
+			tagAttr.Check = excel_import.CheckMode(value)
 		}
 	}
 
