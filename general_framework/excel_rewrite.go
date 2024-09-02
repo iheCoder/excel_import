@@ -51,7 +51,7 @@ func (e *ExcelRewriterMiddleware) PostImportSectionHandle(tx *gorm.DB, s *RawCon
 		}
 
 		// write to content
-		c, err := util.GetFieldString(model, attr.ColumnIndex)
+		c, err := util.GetFieldString(model, i)
 		if err != nil {
 			return err
 		}
