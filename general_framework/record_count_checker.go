@@ -6,36 +6,48 @@ import (
 )
 
 type ExpectedCountChange struct {
+	// TablesCount is the count info of tables
+	TablesCount []TableCountInfo
+}
+
+type TableCountInfo struct {
 	// CountDelta is the count delta
 	CountDelta int64
+	// TableModel is the model of the table
+	TableModel any
+	// preCount is the count before import
+	preCount int64
 }
 
 type RecordCountChecker struct {
-	// preCount is the pre count
-	preCount int64
-	// tableModel is the model of the table
-	tableModel any
 	// change is the expected count change
 	change *ExpectedCountChange
 }
 
 // NewRecordCountChecker creates a new record count checker
-func NewRecordCountChecker(tableModel any, change *ExpectedCountChange) *RecordCountChecker {
+func NewRecordCountChecker(change *ExpectedCountChange) *RecordCountChecker {
 	return &RecordCountChecker{
-		tableModel: tableModel,
-		change:     change,
+		change: change,
 	}
 }
 
 // PreCollect collects the pre import info
 func (c *RecordCountChecker) PreCollect(tx *gorm.DB) error {
-	if c.tableModel == nil {
+	if c.change == nil {
 		return nil
 	}
 
 	// get the count
-	if err := tx.Model(c.tableModel).Count(&c.preCount).Error; err != nil {
-		return err
+	for i := range c.change.TablesCount {
+		tableCount := &c.change.TablesCount[i]
+		if tableCount.TableModel == nil {
+			continue
+		}
+
+		// get the count
+		if err := tx.Model(tableCount.TableModel).Count(&tableCount.preCount).Error; err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -43,19 +55,27 @@ func (c *RecordCountChecker) PreCollect(tx *gorm.DB) error {
 
 // CheckCorrect checks the correctness of the import
 func (c *RecordCountChecker) CheckCorrect(tx *gorm.DB) error {
-	if c.tableModel == nil {
+	if c.change == nil {
 		return nil
 	}
 
 	// get the count
-	var postCount int64
-	if err := tx.Model(c.tableModel).Count(&postCount).Error; err != nil {
-		return err
-	}
+	for i := range c.change.TablesCount {
+		tableCount := &c.change.TablesCount[i]
+		if tableCount.TableModel == nil {
+			continue
+		}
 
-	// check the count
-	if c.change.CountDelta != postCount-c.preCount {
-		return fmt.Errorf("expected count change %d, but got %d", c.change.CountDelta, postCount-c.preCount)
+		// get the count
+		var count int64
+		if err := tx.Model(tableCount.TableModel).Count(&count).Error; err != nil {
+			return err
+		}
+
+		// check the count
+		if count != tableCount.preCount+tableCount.CountDelta {
+			return fmt.Errorf("table %v count is not correct, expect %v, but got %v", tableCount.TableModel, tableCount.preCount+tableCount.CountDelta, count)
+		}
 	}
 
 	return nil
