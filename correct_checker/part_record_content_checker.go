@@ -93,6 +93,18 @@ func (p *PartRecordContentChecker) PreCollect(tx *gorm.DB) error {
 }
 
 func (p *PartRecordContentChecker) CheckCorrect(tx *gorm.DB) error {
+	if err := p.offsetCheckCorrect(tx); err != nil {
+		return err
+	}
+
+	if err := p.idCheckCorrect(tx); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (p *PartRecordContentChecker) offsetCheckCorrect(tx *gorm.DB) error {
 	for _, oceItem := range p.oce {
 		// create new models
 		n := len(oceItem.Items)
@@ -129,6 +141,32 @@ func (p *PartRecordContentChecker) CheckCorrect(tx *gorm.DB) error {
 		// check models
 		for i, item := range oceItem.Items {
 			if err = util.CompareModel(models[i], item.ExpectedModel, oceItem.modelAttr, oceItem.ChkKey); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func (p *PartRecordContentChecker) idCheckCorrect(tx *gorm.DB) error {
+	for _, iceItem := range p.ice {
+		// create new models
+		n := len(iceItem.Items)
+		models := createNewModels(iceItem.TableModel, n)
+
+		// query models
+		for i := 0; i < n; i++ {
+			model := models[i]
+			id := iceItem.Items[i].ID
+			if err := tx.First(model, id).Error; err != nil {
+				return err
+			}
+		}
+
+		// check models
+		for i, item := range iceItem.Items {
+			if err := util.CompareModel(models[i], item.ExpectedModel, iceItem.modelAttr, iceItem.ChkKey); err != nil {
 				return err
 			}
 		}
