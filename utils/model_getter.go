@@ -43,7 +43,7 @@ func GetFieldString(m any, i int) (string, error) {
 	}
 }
 
-func CompareModel(real, expected any, attr []*excel_import.ExcelImportTagAttr) error {
+func CompareModel(real, expected any, attr []*excel_import.ExcelImportTagAttr, key string) error {
 	// check if both are nil
 	if real == nil || expected == nil {
 		if real == nil && expected == nil {
@@ -74,7 +74,7 @@ func CompareModel(real, expected any, attr []*excel_import.ExcelImportTagAttr) e
 
 	for i, a := range attr {
 		// check if the field is not checked
-		if a.Check != excel_import.CheckModeOn {
+		if !excel_import.CheckChkKeyMatch(a.Check, key) {
 			continue
 		}
 

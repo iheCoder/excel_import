@@ -1,4 +1,4 @@
-package general_framework
+package correct_checker
 
 import (
 	"errors"
@@ -20,6 +20,8 @@ type OffsetContentExpected struct {
 	Items []*OffsetContentExpectedItem
 	// TableModel is the table model.
 	TableModel any
+	// ChkKey is the check key.
+	ChkKey string
 
 	// private fields
 	modelAttr []*excel_import.ExcelImportTagAttr
@@ -91,7 +93,7 @@ func (p *PartRecordContentChecker) CheckCorrect(tx *gorm.DB) error {
 
 		// check models
 		for i, item := range oceItem.Items {
-			if err = util.CompareModel(models[i], item.ExpectedModel, oceItem.modelAttr); err != nil {
+			if err = util.CompareModel(models[i], item.ExpectedModel, oceItem.modelAttr, oceItem.ChkKey); err != nil {
 				return err
 			}
 		}

@@ -3,6 +3,7 @@ package general_framework
 import (
 	"bufio"
 	"errors"
+	"excel_import/correct_checker"
 	util "excel_import/utils"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -256,12 +257,12 @@ func TestImportFramework_ImportOneSectionWithCorrectCheck(t *testing.T) {
 	framework := NewImporterOneSectionFramework(tx, cci, WithRowRawModel(fac))
 
 	tableModel := &ResourceTestModel{}
-	countChecker := NewRecordCountChecker(&ExpectedCountChange{TablesCount: []TableCountInfo{
+	countChecker := correct_checker.NewRecordCountChecker(&correct_checker.ExpectedCountChange{TablesCount: []correct_checker.TableCountInfo{
 		{CountDelta: 5, TableModel: tableModel},
 	}})
-	partRecordChecker := NewPartRecordContentChecker([]*OffsetContentExpected{
+	partRecordChecker := correct_checker.NewPartRecordContentChecker([]*correct_checker.OffsetContentExpected{
 		{
-			Items: []*OffsetContentExpectedItem{
+			Items: []*correct_checker.OffsetContentExpectedItem{
 				{
 					Offset: 1,
 					ExpectedModel: &ResourceTestModel{
@@ -282,6 +283,7 @@ func TestImportFramework_ImportOneSectionWithCorrectCheck(t *testing.T) {
 				},
 			},
 			TableModel: tableModel,
+			ChkKey:     "on",
 		},
 	})
 	if err := framework.EnableCorrectnessCheck(countChecker, partRecordChecker); err != nil {

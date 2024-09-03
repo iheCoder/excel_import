@@ -18,3 +18,7 @@ type ExcelImportTagAttr struct {
 	// tagName: chk
 	Check CheckMode
 }
+
+func CheckChkKeyMatch(cm CheckMode, key string) bool {
+	return cm == CheckMode(key)
+}

@@ -1,4 +1,4 @@
-package general_framework
+package correct_checker
 
 import (
 	"fmt"
