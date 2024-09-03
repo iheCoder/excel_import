@@ -28,11 +28,48 @@ type OffsetContentExpected struct {
 	lastID    int64
 }
 
-type PartRecordContentChecker struct {
-	oce []*OffsetContentExpected
+// IDContentExpectedItem is used to check the id content in update.
+type IDContentExpectedItem struct {
+	// ID is the id of the model.
+	ID int64
+	// ExpectedModel is the expected model.
+	ExpectedModel any
 }
 
-func NewPartRecordContentChecker(oce []*OffsetContentExpected) *PartRecordContentChecker {
+type IDContentExpected struct {
+	// Items is the id content expected items.
+	Items []*IDContentExpectedItem
+	// TableModel is the table model.
+	TableModel any
+	// ChkKey is the check key.
+	ChkKey string
+
+	// private fields
+	modelAttr []*excel_import.ExcelImportTagAttr
+}
+
+type PartRecordContentChecker struct {
+	oce []*OffsetContentExpected
+	ice []*IDContentExpected
+}
+
+func NewPartRecordContentChecker() *PartRecordContentChecker {
+	return &PartRecordContentChecker{}
+}
+
+func (p *PartRecordContentChecker) SetIDContentExpected(ice []*IDContentExpected) {
+	for _, iceItem := range ice {
+		if iceItem.TableModel == nil {
+			panic("TableModel is nil")
+		}
+
+		iceItem.modelAttr = util.ParseTag(iceItem.TableModel)
+	}
+
+	p.ice = ice
+}
+
+func (p *PartRecordContentChecker) SetOffsetContentExpected(oce []*OffsetContentExpected) {
 	for _, oceItem := range oce {
 		if oceItem.TableModel == nil {
 			panic("TableModel is nil")
@@ -41,9 +78,7 @@ func NewPartRecordContentChecker(oce []*OffsetContentExpected) *PartRecordConten
 		oceItem.modelAttr = util.ParseTag(oceItem.TableModel)
 	}
 
-	return &PartRecordContentChecker{
-		oce: oce,
-	}
+	p.oce = oce
 }
 
 func (p *PartRecordContentChecker) PreCollect(tx *gorm.DB) error {

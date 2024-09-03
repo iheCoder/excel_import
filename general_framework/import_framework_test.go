@@ -260,7 +260,8 @@ func TestImportFramework_ImportOneSectionWithCorrectCheck(t *testing.T) {
 	countChecker := correct_checker.NewRecordCountChecker(&correct_checker.ExpectedCountChange{TablesCount: []correct_checker.TableCountInfo{
 		{CountDelta: 5, TableModel: tableModel},
 	}})
-	partRecordChecker := correct_checker.NewPartRecordContentChecker([]*correct_checker.OffsetContentExpected{
+	partRecordChecker := correct_checker.NewPartRecordContentChecker()
+	partRecordChecker.SetOffsetContentExpected([]*correct_checker.OffsetContentExpected{
 		{
 			Items: []*correct_checker.OffsetContentExpectedItem{
 				{
