@@ -8,7 +8,7 @@ import (
 )
 
 // LinkedTableWhere is used to get the where condition of the linked table.
-type LinkedTableWhere func(m any) (any, map[string]any)
+type LinkedTableWhere func(m any) (any, string)
 
 // SimpleLinkChecker is used to check the simple link.
 // simple link is one table link to multiple tables in same number of columns and same column content.
@@ -86,7 +86,7 @@ func (s *SimpleLinkChecker) GetTableModels(tx *gorm.DB) ([]any, error) {
 	// convert to []any
 	var models []any
 	for i := 0; i < dbModels.Len(); i++ {
-		models = append(models, dbModels.Index(i).Interface())
+		models = append(models, dbModels.Index(i).Addr().Interface())
 	}
 
 	return models, nil
