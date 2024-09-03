@@ -1,9 +1,13 @@
 package excel_import
 
 type CheckMode string
+type TreeFlag string
 
 const (
 	CheckModeOn = "on"
+
+	TreeFlagParentID TreeFlag = "parent_id"
+	TreeFlagKey      TreeFlag = "key"
 )
 
 type ExcelImportTagAttr struct {
@@ -17,6 +21,9 @@ type ExcelImportTagAttr struct {
 	// check model
 	// tagName: chk
 	Check CheckMode
+	// tree flag
+	// tagName: tree
+	Tree TreeFlag
 }
 
 func CheckChkKeyMatch(cm CheckMode, key string) bool {
