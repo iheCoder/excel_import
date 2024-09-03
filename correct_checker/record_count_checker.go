@@ -17,6 +17,8 @@ type TableCountInfo struct {
 	TableModel any
 	// preCount is the count before import
 	preCount int64
+	// RangeWhere is the range where condition
+	RangeWhere string
 }
 
 type RecordCountChecker struct {
@@ -38,6 +40,7 @@ func (c *RecordCountChecker) PreCollect(tx *gorm.DB) error {
 	}
 
 	// get the count
+	var err error
 	for i := range c.change.TablesCount {
 		tableCount := &c.change.TablesCount[i]
 		if tableCount.TableModel == nil {
@@ -45,12 +48,28 @@ func (c *RecordCountChecker) PreCollect(tx *gorm.DB) error {
 		}
 
 		// get the count
-		if err := tx.Model(tableCount.TableModel).Count(&tableCount.preCount).Error; err != nil {
+		tableCount.preCount, err = c.getCount(tx, tableCount)
+		if err != nil {
 			return err
 		}
 	}
 
 	return nil
+}
+
+func (c *RecordCountChecker) getCount(tx *gorm.DB, tableCount *TableCountInfo) (int64, error) {
+	var count int64
+	if len(tableCount.RangeWhere) > 0 {
+		if err := tx.Model(tableCount.TableModel).Where(tableCount.RangeWhere).Count(&count).Error; err != nil {
+			return 0, err
+		}
+	} else {
+		if err := tx.Model(tableCount.TableModel).Count(&count).Error; err != nil {
+			return 0, err
+		}
+	}
+
+	return count, nil
 }
 
 // CheckCorrect checks the correctness of the import
@@ -67,8 +86,8 @@ func (c *RecordCountChecker) CheckCorrect(tx *gorm.DB) error {
 		}
 
 		// get the count
-		var count int64
-		if err := tx.Model(tableCount.TableModel).Count(&count).Error; err != nil {
+		count, err := c.getCount(tx, tableCount)
+		if err != nil {
 			return err
 		}
 
