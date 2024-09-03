@@ -5,7 +5,6 @@ import (
 	"errors"
 	"excel_import/correct_checker"
 	util "excel_import/utils"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"os"
 	"strconv"
@@ -14,7 +13,6 @@ import (
 
 const (
 	personSectionType RowType = "person"
-	defaultDBPath             = "../testdata/test.db"
 )
 
 func TestImportFramework_Import(t *testing.T) {
@@ -249,7 +247,7 @@ func (mf *computerFac) MinColumnCount() int {
 
 func TestImportFramework_ImportOneSectionWithCorrectCheck(t *testing.T) {
 	path := "../testdata/excel_test_resource.xlsx"
-	db := initDB()
+	db := util.InitDB()
 	tx := db.Begin()
 
 	cci := &correctCheckImporter{db: db}
@@ -305,15 +303,6 @@ func TestImportFramework_ImportOneSectionWithCorrectCheck(t *testing.T) {
 
 	tx.Commit()
 	t.Log("done")
-}
-
-func initDB() *gorm.DB {
-	db, err := gorm.Open(sqlite.Open(defaultDBPath), &gorm.Config{})
-	if err != nil {
-		panic(err)
-	}
-
-	return db
 }
 
 type correctCheckImporter struct {
