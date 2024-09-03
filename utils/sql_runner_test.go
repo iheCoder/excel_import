@@ -151,3 +151,41 @@ func TestGenerateUpdateSQLWithValues(t *testing.T) {
 		})
 	}
 }
+
+func TestFormatString(t *testing.T) {
+	type testData struct {
+		s        string
+		expected string
+	}
+
+	tests := []testData{
+		{
+			s:        "hello",
+			expected: "'hello'",
+		},
+		{
+			s:        "O'Reilly",
+			expected: "'O''Reilly'",
+		},
+		{
+			s:        "hello\"x'",
+			expected: "'hello\"x'''",
+		},
+		{
+			s:        "hello'x\"",
+			expected: "'hello''x\"'",
+		},
+		{
+			s:        "hello#",
+			expected: "'hello#'",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run("TestFormatString", func(t *testing.T) {
+			if got := formatValueString(tt.s); got != tt.expected {
+				t.Errorf("formatString() = %v, want %v", got, tt.expected)
+			}
+		})
+	}
+}

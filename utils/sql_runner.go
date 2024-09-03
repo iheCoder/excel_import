@@ -2,12 +2,18 @@ package util
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"gorm.io/gorm"
 	"io"
 	"os"
 	"reflect"
 	"strings"
+)
+
+const (
+	defaultValueQuote   = "'"
+	alternateValueQuote = "\""
 )
 
 type SqlSentencesRunner struct {
@@ -209,7 +215,7 @@ func (r *SqlSentencesRunner) initSqlFile() error {
 func formatValue(v reflect.Value) string {
 	switch v.Kind() {
 	case reflect.String:
-		return fmt.Sprintf("'%s'", v.String())
+		return formatValueString(v.String())
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		return fmt.Sprintf("%d", v.Int())
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
@@ -223,6 +229,26 @@ func formatValue(v reflect.Value) string {
 		return "FALSE"
 	default:
 		// 可以根据需要处理更多类型
-		return fmt.Sprintf("'%v'", v.Interface())
+		return formatValueInterface(v.Interface())
 	}
+}
+
+func formatValueInterface(v any) string {
+	b, _ := json.Marshal(v)
+	s := string(b)
+	return formatValueString(s)
+}
+
+func formatValueString(s string) string {
+	s = escapeSQLValue(s)
+	return fmt.Sprintf("'%s'", s)
+}
+
+// escapeSQLValue escapes a string value for use in a SQL query.
+func escapeSQLValue(value string) string {
+	// Escape backslashes and single quotes
+	value = strings.ReplaceAll(value, `\`, `\\`)
+	// Escape single quotes
+	value = strings.ReplaceAll(value, `'`, `''`)
+	return value
 }

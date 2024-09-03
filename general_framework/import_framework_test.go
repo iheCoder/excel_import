@@ -2,7 +2,9 @@ package general_framework
 
 import (
 	"bufio"
+	"errors"
 	util "excel_import/utils"
+	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"os"
 	"strconv"
@@ -11,6 +13,7 @@ import (
 
 const (
 	personSectionType RowType = "person"
+	defaultDBPath             = "../testdata/test.db"
 )
 
 func TestImportFramework_Import(t *testing.T) {
@@ -241,4 +244,124 @@ func (mf *computerFac) GetModel() any {
 
 func (mf *computerFac) MinColumnCount() int {
 	return 5
+}
+
+func TestImportFramework_ImportOneSectionWithCorrectCheck(t *testing.T) {
+	path := "../testdata/excel_test_resource.xlsx"
+	db := initDB()
+	tx := db.Begin()
+
+	cci := &correctCheckImporter{db: db}
+	fac := &resourceFac{}
+	framework := NewImporterOneSectionFramework(tx, cci, WithRowRawModel(fac))
+
+	tableModel := &ResourceTestModel{}
+	countChecker := NewRecordCountChecker(&ExpectedCountChange{TablesCount: []TableCountInfo{
+		{CountDelta: 5, TableModel: tableModel},
+	}})
+	partRecordChecker := NewPartRecordContentChecker([]*OffsetContentExpected{
+		{
+			Items: []*OffsetContentExpectedItem{
+				{
+					Offset: 1,
+					ExpectedModel: &ResourceTestModel{
+						Name: "A",
+					},
+				},
+				{
+					Offset: 3,
+					ExpectedModel: &ResourceTestModel{
+						Name: "C",
+					},
+				},
+				{
+					Offset: 5,
+					ExpectedModel: &ResourceTestModel{
+						Name: "E",
+					},
+				},
+			},
+			TableModel: tableModel,
+		},
+	})
+	if err := framework.EnableCorrectnessCheck(countChecker, partRecordChecker); err != nil {
+		t.Fatal(err)
+	}
+
+	err := framework.Import(path)
+	if err != nil {
+		tx.Rollback()
+		t.Fatal(err)
+	}
+
+	// check correctness
+	if err = framework.CheckCorrect(); err != nil {
+		tx.Rollback()
+		t.Fatal(err)
+	}
+
+	tx.Commit()
+	t.Log("done")
+}
+
+func initDB() *gorm.DB {
+	db, err := gorm.Open(sqlite.Open(defaultDBPath), &gorm.Config{})
+	if err != nil {
+		panic(err)
+	}
+
+	return db
+}
+
+type correctCheckImporter struct {
+	db *gorm.DB
+}
+
+func (di *correctCheckImporter) ImportSection(tx *gorm.DB, s *RawContent) error {
+	// get model
+	model, ok := s.Model.(*resourceExcelModel)
+	if !ok {
+		return errors.New("model is not ResourceTestModel")
+	}
+
+	// convert into ResourceTestModel
+	resource := &ResourceTestModel{
+		Name:         model.Name,
+		ResourceType: model.ResourceType,
+	}
+
+	// insert model
+	if err := tx.Create(resource).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type resourceExcelModel struct {
+	Name         string `exi:"index:0"`
+	ResourceType int32  `exi:"index:1"`
+}
+
+type resourceFac struct {
+}
+
+func (mf *resourceFac) GetModel() any {
+	return &resourceExcelModel{}
+}
+
+func (mf *resourceFac) MinColumnCount() int {
+	return 2
+}
+
+type ResourceTestModel struct {
+	ID           int     `json:"id" gorm:"column:id"`
+	Name         string  `json:"name" gorm:"column:name" exi:"chk:on"`
+	ResourceType int32   `json:"resource_type" gorm:"column:resource_type"`
+	ResourceID   int64   `json:"resource_id" gorm:"column:resource_id"`
+	Sort         float64 `json:"sort" gorm:"column:sort"`
+}
+
+func (r *ResourceTestModel) TableName() string {
+	return "resource"
 }
