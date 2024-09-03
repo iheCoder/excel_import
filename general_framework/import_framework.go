@@ -52,6 +52,12 @@ func WithRowRawModel(rrm excel_import.RowModelFactory) OptionFunc {
 	}
 }
 
+func WithSimpleModelFactory(m any) OptionFunc {
+	return func(framework *ImportFramework) {
+		framework.rowRawModel = util.NewSimpleModelFactory(m)
+	}
+}
+
 func WithOneSectionPostHandlers(postHandler excel_import.PostHandler) OptionFunc {
 	return func(framework *ImportFramework) {
 		framework.postHandlers = map[RowType]excel_import.PostHandler{
