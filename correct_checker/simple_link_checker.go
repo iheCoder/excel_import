@@ -18,8 +18,8 @@ type SimpleLinkChecker struct {
 	linkedFunc LinkedTableWhere
 	// TableModel is the table model.
 	TableModel any
-	// RangeWhere is the range where condition.
-	RangeWhere string
+	// rangeWhere is the range where condition.
+	rangeWhere string
 }
 
 func NewSimpleLinkChecker(linkedFunc LinkedTableWhere, tableModel any) *SimpleLinkChecker {
@@ -29,7 +29,16 @@ func NewSimpleLinkChecker(linkedFunc LinkedTableWhere, tableModel any) *SimpleLi
 	}
 }
 
+func (s *SimpleLinkChecker) OverrideRangeWhere(rangeWhere string) {
+	s.rangeWhere = rangeWhere
+}
+
 func (s *SimpleLinkChecker) PreCollect(tx *gorm.DB) error {
+	// check if range where is set
+	if len(s.rangeWhere) > 0 {
+		return nil
+	}
+
 	// get last id
 	var lastID int64
 	if err := tx.Model(s.TableModel).Select("id").Order("id desc").First(&lastID).Error; err != nil {
@@ -37,7 +46,7 @@ func (s *SimpleLinkChecker) PreCollect(tx *gorm.DB) error {
 	}
 
 	// construct range where
-	s.RangeWhere = fmt.Sprintf("id > %d", lastID)
+	s.rangeWhere = fmt.Sprintf("id > %d", lastID)
 
 	return nil
 }
@@ -79,7 +88,7 @@ func (s *SimpleLinkChecker) GetTableModels(tx *gorm.DB) ([]any, error) {
 	dbModels := reflect.New(sliceType).Elem()
 
 	// query models
-	if err := tx.Where(s.RangeWhere).Find(dbModels.Addr().Interface()).Error; err != nil {
+	if err := tx.Where(s.rangeWhere).Find(dbModels.Addr().Interface()).Error; err != nil {
 		return nil, err
 	}
 

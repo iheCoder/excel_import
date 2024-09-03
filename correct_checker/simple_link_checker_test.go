@@ -25,7 +25,7 @@ func TestGetTableModels(t *testing.T) {
 
 	slc := &SimpleLinkChecker{
 		TableModel: &ResourceTestModel{},
-		RangeWhere: "id <= 3",
+		rangeWhere: "id <= 3",
 	}
 
 	models, err := slc.GetTableModels(tx)
@@ -100,13 +100,13 @@ func TestCheckCorrect(t *testing.T) {
 
 	// check correct
 	// id in (4,5), it's correct
-	slc.RangeWhere = "id in (4,5)"
+	slc.OverrideRangeWhere("id in (4,5)")
 	if err := slc.CheckCorrect(tx); err != nil {
 		t.Fatalf("expected nil, got %v", err)
 	}
 
 	// id in (6), it's wrong
-	slc.RangeWhere = "id in (6)"
+	slc.OverrideRangeWhere("id in (6)")
 	if err := slc.CheckCorrect(tx); err == nil {
 		t.Fatalf("expected error, got nil")
 	}
