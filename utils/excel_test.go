@@ -86,3 +86,19 @@ func TestSetHyperlinksInColumn(t *testing.T) {
 
 	t.Log("done")
 }
+
+func TestDivideSheetsIntoTablesBySuffixKey(t *testing.T) {
+	path := "../testdata/excel_test_divide.xlsx"
+	paths, err := DivideSheetsIntoTablesByDefaultSuffixKey(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(paths) != 3 {
+		t.Fatalf("expected 3, got %d", len(paths))
+	}
+
+	for _, p := range paths {
+		fmt.Println(p)
+	}
+}

@@ -14,7 +14,8 @@ import (
 type ExcelOpenMode int32
 
 const (
-	defaultStartRow = 1
+	defaultStartRow  = 1
+	DefaultSuffixKey = ".td"
 )
 
 // WriteExcelColumnContent 写入Excel列内容，支持CSV和XLSX格式
@@ -130,6 +131,14 @@ func readXLSX(path string) ([][]string, error) {
 
 // DivideSheetsIntoTables 将Excel文件中的每个Sheet拆分为单独的文件，并返回拆分后的文件绝对路径
 func DivideSheetsIntoTables(path string) ([]string, error) {
+	return DivideSheetsIntoTablesBySuffixKey(path, "")
+}
+
+func DivideSheetsIntoTablesByDefaultSuffixKey(path string) ([]string, error) {
+	return DivideSheetsIntoTablesBySuffixKey(path, DefaultSuffixKey)
+}
+
+func DivideSheetsIntoTablesBySuffixKey(path, suffixKey string) ([]string, error) {
 	f, err := xlsx.OpenFile(path)
 	if err != nil {
 		return nil, err
@@ -137,6 +146,10 @@ func DivideSheetsIntoTables(path string) ([]string, error) {
 
 	filePaths := make([]string, 0, len(f.Sheets))
 	for _, sheet := range f.Sheets {
+		if len(suffixKey) > 0 && !strings.HasSuffix(sheet.Name, suffixKey) {
+			continue
+		}
+
 		table := xlsx.NewFile()
 		tableSheet, err := table.AddSheet(sheet.Name)
 		if err != nil {
