@@ -138,6 +138,8 @@ func DivideSheetsIntoTablesByDefaultSuffixKey(path string) ([]string, error) {
 	return DivideSheetsIntoTablesBySuffixKey(path, DefaultSuffixKey)
 }
 
+// DivideSheetsIntoTablesBySuffixKey splits the sheets by suffix key and preserves formatting, styles as possible.
+// ATTENTION that the format or style may be lost in some cases.
 func DivideSheetsIntoTablesBySuffixKey(path, suffixKey string) ([]string, error) {
 	f, err := xlsx.OpenFile(path)
 	if err != nil {
@@ -158,12 +160,11 @@ func DivideSheetsIntoTablesBySuffixKey(path, suffixKey string) ([]string, error)
 		for _, row := range sheet.Rows {
 			tableRow := tableSheet.AddRow()
 			for _, cell := range row.Cells {
-				text := cell.String()
 				tableCell := tableRow.AddCell()
-				tableCell.SetString(text)
+				copyCell(cell, tableCell)
 			}
 		}
-		tablePath := strings.TrimSuffix(path, filepath.Ext(path)) + "_" + sheet.Name + ".xlsx"
+		tablePath := strings.TrimSuffix(path, filepath.Ext(path)) + "_" + strings.TrimSuffix(sheet.Name, suffixKey) + ".xlsx"
 		if err = table.Save(tablePath); err != nil {
 			return nil, err
 		}
@@ -172,6 +173,14 @@ func DivideSheetsIntoTablesBySuffixKey(path, suffixKey string) ([]string, error)
 	}
 
 	return filePaths, nil
+}
+
+// copySheet copies the cell content and style from src to dst
+func copyCell(src, dst *xlsx.Cell) {
+	dst.SetString(src.String())
+	if src.GetStyle() != nil {
+		dst.SetStyle(src.GetStyle())
+	}
 }
 
 // CombineTablesIntoOne 将多个Excel文件合并为一个
