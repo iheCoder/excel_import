@@ -37,6 +37,55 @@ var (
 	}
 )
 
+// GenerateStructString generates a string representation of a struct.
+// The struct is defined by the structName and the contents.
+// the field name is english word ascending order
+// the field type is check by the contents
+// the field comment is the fieldComment combined with number ascending order
+func GenerateStructString(structName string, fieldComment []string, contents [][]string) string {
+	info := StructInfo{
+		Name: structName,
+	}
+
+	for i, v := range contents {
+		info.Fields = append(info.Fields, Field{
+			Name:    getExcelColIndex(i),
+			Type:    detectType(v),
+			Comment: fmt.Sprintf("%s\t%d", fieldComment[i], i+1),
+		})
+	}
+
+	return info.String()
+}
+
+// getExcelColIndex returns the excel col index for the given number.
+// e.g. 0 -> "A", 1 -> "B", 25 -> "Z", 26 -> "AA", 27 -> "AB", 5201314 -> "HELLO"
+func getExcelColIndex(i int) string {
+	if i < 0 {
+		return ""
+	}
+
+	const base = 26
+	const a = 65
+	var sb strings.Builder
+
+	for i >= 0 {
+		sb.WriteByte(byte(i%base) + a)
+		i /= base
+		i--
+	}
+
+	return reverse(sb.String())
+}
+
+func reverse(s string) string {
+	var sb strings.Builder
+	for i := len(s) - 1; i >= 0; i-- {
+		sb.WriteByte(s[i])
+	}
+	return sb.String()
+}
+
 func resetTypeCodes() {
 	strTypeCode.Is = true
 	intTypeCode.Is = true

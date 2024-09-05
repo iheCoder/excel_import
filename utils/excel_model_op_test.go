@@ -70,3 +70,43 @@ func TestStructInfo_Fmt(t *testing.T) {
 		}
 	}
 }
+
+func TestGenerateStructString(t *testing.T) {
+	type testData struct {
+		structName   string
+		fieldComment []string
+		contents     [][]string
+		expected     string
+	}
+
+	tests := []testData{
+		{
+			structName: "test",
+			fieldComment: []string{
+				"id",
+				"name",
+			},
+			contents: [][]string{
+				{"1", "2"},
+				{"a", "b"},
+			},
+			expected: "type test struct {\n\tA int // id\t1\n\tB string // name\t2\n}\n",
+		},
+		{
+			structName: "test",
+			fieldComment: []string{
+				"你好",
+			},
+			contents: [][]string{
+				{"1"},
+			},
+			expected: "type test struct {\n\tA int // 你好\t1\n}\n",
+		},
+	}
+
+	for _, test := range tests {
+		if GenerateStructString(test.structName, test.fieldComment, test.contents) != test.expected {
+			t.Errorf("expected:\n %s, got:\n %s", test.expected, GenerateStructString(test.structName, test.fieldComment, test.contents))
+		}
+	}
+}
