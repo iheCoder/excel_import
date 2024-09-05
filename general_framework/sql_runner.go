@@ -43,7 +43,7 @@ func (s *SqlRunnerMiddleware) PostImportSectionHandle(tx *gorm.DB, rc *RawConten
 	}
 
 	// generate update sql if effect update is exists
-	upCond, whereCond := rc.GetUpdateCond()
+	_, upCond, whereCond := rc.GetUpdateCond()
 	if len(upCond) > 0 && len(whereCond) > 0 {
 		s.cache = append(s.cache, util.GenerateUpdateSQLWithValues(s.runner.TableName(), upCond, whereCond))
 	}

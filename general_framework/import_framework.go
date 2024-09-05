@@ -77,7 +77,7 @@ func WithOneSectionCheckers(checker SectionChecker) OptionFunc {
 
 func WithMiddlewares(middlewares ...GeneralMiddleware) OptionFunc {
 	return func(framework *ImportFramework) {
-		framework.middlewares = middlewares
+		framework.middlewares = append(framework.middlewares, middlewares...)
 	}
 }
 
@@ -93,6 +93,10 @@ func NewImporterFramework(db *gorm.DB, importers map[RowType]SectionImporter, re
 
 	for _, option := range options {
 		option(ki)
+	}
+
+	if ki.control.EnableBatch {
+		ki.middlewares = append(ki.middlewares, newBatchSupportFeature(ki.control.BatchSize))
 	}
 
 	return ki
