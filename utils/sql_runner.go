@@ -163,6 +163,22 @@ func GenerateInsertSQLWithValues(tableName string, v interface{}) string {
 	return query
 }
 
+func GenerateInsertSqlWithMap(tableName string, m map[string]any) string {
+	var columns []string
+	var values []string
+
+	for k, v := range m {
+		columns = append(columns, k)
+		values = append(values, formatValue(reflect.ValueOf(v)))
+	}
+
+	columnsStr := strings.Join(columns, ", ")
+	valuesStr := strings.Join(values, ", ")
+
+	query := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s);\n", tableName, columnsStr, valuesStr)
+	return query
+}
+
 func (r *SqlSentencesRunner) GenerateSqlUpdateSentences(updates, where map[string]any) error {
 	if r.sqlFile == nil {
 		err := r.initSqlFile()
