@@ -126,6 +126,8 @@ func (r *SqlSentencesRunner) Close() error {
 	return nil
 }
 
+// GenerateInsertSQLWithValues generates an insert SQL statement with values.
+// v must be a struct or a pointer to a struct and must have gorm tags.
 func GenerateInsertSQLWithValues(tableName string, v interface{}) string {
 	val := reflect.ValueOf(v)
 	if val.Kind() == reflect.Ptr {
@@ -134,11 +136,10 @@ func GenerateInsertSQLWithValues(tableName string, v interface{}) string {
 
 	var columns []string
 	var values []string
+	gts := ParseGormTag(v)
 
 	for i := 0; i < val.NumField(); i++ {
 		field := val.Field(i)
-		fieldType := val.Type().Field(i)
-		dbTag := fieldType.Tag.Get("db")
 
 		// 如果字段是零值，跳过它
 		if field.Kind() == reflect.Ptr {
@@ -152,7 +153,7 @@ func GenerateInsertSQLWithValues(tableName string, v interface{}) string {
 			continue
 		}
 
-		columns = append(columns, dbTag)
+		columns = append(columns, gts[i].Column)
 		values = append(values, formatValue(field))
 	}
 

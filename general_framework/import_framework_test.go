@@ -218,11 +218,11 @@ func TestImportFramework_ImportOneSectionWithSqlRunner(t *testing.T) {
 }
 
 type computer struct {
-	CPU       string `exi:"index:0" db:"cpu"`
-	GPU       string `exi:"index:1" db:"gpu"`
-	MainBoard string `exi:"index:2" db:"main_board"`
-	RAM       string `exi:"index:3" db:"ram"`
-	HardDisk  int    `exi:"index:4" db:"hard_disk"`
+	CPU       string `exi:"index:0" gorm:"column:cpu"`
+	GPU       string `exi:"index:1" gorm:"column:gpu"`
+	MainBoard string `exi:"index:2" gorm:"column:main_board"`
+	RAM       string `exi:"index:3" gorm:"column:ram"`
+	HardDisk  int    `exi:"index:4" gorm:"column:hard_disk"`
 }
 
 type simpleTestDataSupportSqlRunnerMiddlewareImporter struct {

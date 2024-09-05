@@ -7,8 +7,8 @@ import (
 )
 
 type testStruct struct {
-	Name string `db:"name"`
-	Age  int    `db:"age"`
+	Name string `gorm:"column:name" json:"name" db:"name"`
+	Age  int    `gorm:"column:age" json:"age" db:"age"`
 }
 
 func initDB() *gorm.DB {
