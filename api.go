@@ -28,6 +28,9 @@ type EndFunc func(s []string) bool
 // RowFilter filter the row
 type RowFilter func(s []string) bool
 
+// FormatChecker check the type of the cell content
+type FormatChecker func(s string) bool
+
 type CorrectnessChecker interface {
 	// PreCollect pre collect the data.
 	PreCollect(tx *gorm.DB) error

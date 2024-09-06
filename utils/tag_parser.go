@@ -94,6 +94,8 @@ func parseTag(tag string) *excel_import.ExcelImportTagAttr {
 			tagAttr.Check = excel_import.CheckMode(value)
 		case "tree":
 			tagAttr.Tree = excel_import.TreeFlag(value)
+		case "fcf":
+			tagAttr.FCF = excel_import.FormatCheckFunc(value)
 		}
 	}
 

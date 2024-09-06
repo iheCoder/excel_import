@@ -3,6 +3,7 @@ package util
 import (
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 	"unicode"
 )
@@ -78,4 +79,16 @@ func CheckIsHash(str string) bool {
 	}
 
 	return md5Regex.MatchString(str) || sha1Regex.MatchString(str) || sha256Regex.MatchString(str)
+}
+
+// CheckIsInt checks if the given string is an integer.
+func CheckIsInt(str string) bool {
+	_, err := strconv.Atoi(str)
+	return err == nil
+}
+
+// CheckIsFloat checks if the given string is a float.
+func CheckIsFloat(str string) bool {
+	_, err := strconv.ParseFloat(str, 64)
+	return err == nil
 }

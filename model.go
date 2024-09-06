@@ -2,12 +2,22 @@ package excel_import
 
 type CheckMode string
 type TreeFlag string
+type FormatCheckFunc string
 
 const (
 	CheckModeOn = "on"
 
 	TreeFlagParentID TreeFlag = "parent_id"
 	TreeFlagKey      TreeFlag = "key"
+
+	FormatCheckFuncInt      FormatCheckFunc = "int"
+	FormatCheckFuncFloat    FormatCheckFunc = "float"
+	FormatCheckFuncUrl      FormatCheckFunc = "url"
+	FormatCheckFuncImageUrl FormatCheckFunc = "img"
+	FormatCheckFuncChinese  FormatCheckFunc = "cn"
+	FormatCheckFuncEnglish  FormatCheckFunc = "en"
+	FormatCheckFuncPinyin   FormatCheckFunc = "pinyin"
+	FormatCheckFuncHash     FormatCheckFunc = "hash"
 )
 
 type ExcelImportTagAttr struct {
@@ -24,6 +34,9 @@ type ExcelImportTagAttr struct {
 	// tree flag
 	// tagName: tree
 	Tree TreeFlag
+	// type check function
+	// tagName: fcf
+	FCF FormatCheckFunc
 }
 
 func CheckChkKeyMatch(cm CheckMode, key string) bool {
