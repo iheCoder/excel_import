@@ -106,7 +106,7 @@ func GenerateStructString(structName string, fieldComment []string, contents [][
 }
 
 // getExcelColIndex returns the excel col index for the given number.
-// e.g. 0 -> "A", 1 -> "B", 25 -> "Z", 26 -> "AA", 27 -> "AB", 5201314 -> "HELLO"
+// e.g. 0 -> "A", 1 -> "B", 25 -> "Z", 26 -> "AA", 27 -> "AB", 3752126 -> "HELLO"
 func getExcelColIndex(i int) string {
 	if i < 0 {
 		return ""
@@ -123,6 +123,31 @@ func getExcelColIndex(i int) string {
 	}
 
 	return reverse(sb.String())
+}
+
+// TranslateNumIndexByExcelColumn translates the excel column to the number index.
+// e.g. "A" -> 0, "B" -> 1, "Z" -> 25, "AA" -> 26, "AB" -> 27, "HELLO" -> 3752126
+func TranslateNumIndexByExcelColumn(s string) int {
+	if len(s) == 0 {
+		panic("empty string")
+	}
+
+	// check if the string is valid
+	for i := 0; i < len(s); i++ {
+		if s[i] < 'A' || s[i] > 'Z' {
+			panic("invalid string")
+		}
+	}
+
+	// translate the string to number
+	const base = 26
+	const a = 65
+	var sum int
+	for i := 0; i < len(s); i++ {
+		sum = sum*base + int(s[i]-a) + 1
+	}
+
+	return sum - 1
 }
 
 func reverse(s string) string {

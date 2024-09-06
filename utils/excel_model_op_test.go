@@ -124,3 +124,43 @@ func TestGenerateExcelModelString(t *testing.T) {
 		t.Errorf("expected:\n %s, got:\n %s", expected, structStr)
 	}
 }
+
+func TestTranslateNumIndexByExcelColumn(t *testing.T) {
+	type testData struct {
+		column   string
+		expected int
+	}
+
+	tests := []testData{
+		{
+			column:   "A",
+			expected: 0,
+		},
+		{
+			column:   "X",
+			expected: 23,
+		},
+		{
+			column:   "AB",
+			expected: 27,
+		},
+		{
+			column:   "AZ",
+			expected: 51,
+		},
+		{
+			column:   "EQ",
+			expected: 146,
+		},
+		{
+			column:   "HELLO",
+			expected: 3752126,
+		},
+	}
+
+	for _, test := range tests {
+		if TranslateNumIndexByExcelColumn(test.column) != test.expected {
+			t.Errorf("expected:\n %d, got:\n %d", test.expected, TranslateNumIndexByExcelColumn(test.column))
+		}
+	}
+}
