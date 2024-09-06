@@ -16,3 +16,21 @@ func removeLargeUnicodeChars(s string) string {
 	}
 	return string(result)
 }
+
+func ReverseMatrix(contents [][]string) [][]string {
+	if len(contents) == 0 {
+		return contents
+	}
+
+	n := len(contents[0])
+	m := len(contents)
+	res := make([][]string, n)
+	for i := 0; i < n; i++ {
+		res[i] = make([]string, m)
+		for j := 0; j < m; j++ {
+			res[i][j] = contents[j][i]
+		}
+	}
+
+	return res
+}

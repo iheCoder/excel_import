@@ -380,7 +380,7 @@ func (t *TreeImportFramework) importLevelNode(importer LevelImporter, node *Tree
 
 func (t *TreeImportFramework) constructTree(rcContents [][]string) (*TreeNode, error) {
 	// reverse the matrix
-	contents := reverseMatrix(rcContents)
+	contents := util.ReverseMatrix(rcContents)
 
 	// remove the column which is not belongs to the tree
 	contents = contents[:t.cfg.TreeBoundary+1]
@@ -426,22 +426,4 @@ func (t *TreeImportFramework) findParent(s []string, level int) *TreeNode {
 		return node
 	}
 	return nil
-}
-
-func reverseMatrix(contents [][]string) [][]string {
-	if len(contents) == 0 {
-		return contents
-	}
-
-	n := len(contents[0])
-	m := len(contents)
-	res := make([][]string, n)
-	for i := 0; i < n; i++ {
-		res[i] = make([]string, m)
-		for j := 0; j < m; j++ {
-			res[i][j] = contents[j][i]
-		}
-	}
-
-	return res
 }
