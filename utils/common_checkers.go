@@ -10,6 +10,9 @@ import (
 var (
 	imageRegex  = regexp.MustCompile(`\.(jpg|jpeg|png|gif|bmp)$`)
 	pinyinRegex = regexp.MustCompile(`^[a-zA-Zāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜü]+$`)
+	md5Regex    = regexp.MustCompile(`^[a-f0-9]{32}$`)
+	sha1Regex   = regexp.MustCompile(`^[a-f0-9]{40}$`)
+	sha256Regex = regexp.MustCompile(`^[a-f0-9]{64}$`)
 )
 
 // CheckIsUrl checks if the given string is a URL.
@@ -65,4 +68,14 @@ func CheckIsContainsEnglish(str string) bool {
 func CheckIsPinyin(str string) bool {
 	str = strings.Replace(str, " ", "", -1)
 	return pinyinRegex.MatchString(str)
+}
+
+// CheckIsHash checks if the given string is a hash.
+// Supported hash types: MD5, SHA-1, SHA-256.
+func CheckIsHash(str string) bool {
+	if len(str) == 0 {
+		return false
+	}
+
+	return md5Regex.MatchString(str) || sha1Regex.MatchString(str) || sha256Regex.MatchString(str)
 }

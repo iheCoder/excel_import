@@ -205,3 +205,43 @@ func TestCheckIsPinyin(t *testing.T) {
 		}
 	}
 }
+
+func TestCheckIsHash(t *testing.T) {
+	type testData struct {
+		str      string
+		expected bool
+	}
+
+	tests := []testData{
+		{
+			str:      "你好",
+			expected: false,
+		},
+		{
+			str:      "hello",
+			expected: false,
+		},
+		{
+			str:      "spjj47cdb84968e22b69ba874fde4d3cfdae",
+			expected: false,
+		},
+		{
+			str:      "spjj47cdb84968e22b69ba874fde4d3cfda",
+			expected: false,
+		},
+		{
+			str:      "e99a18c428cb38d5f260853678922e03",
+			expected: true,
+		},
+		{
+			str:      "6dcd4ce23d88d1f7f9d453b78b9cde65e3f5a6d8499f2c1c3d49a72b0c8e8d2",
+			expected: false,
+		},
+	}
+
+	for _, test := range tests {
+		if CheckIsHash(test.str) != test.expected {
+			t.Fatalf("str %s expected %v, got %v", test.str, test.expected, CheckIsHash(test.str))
+		}
+	}
+}
