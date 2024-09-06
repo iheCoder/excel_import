@@ -168,6 +168,8 @@ type treeImportOptionalCfg struct {
 	treeColEndFunc ColEndFunc
 	// the cell format function
 	cellFormatFunc excel_import.CellFormatter
+	// the row filter function
+	rowFilterFunc excel_import.RowFilter
 }
 
 func genNodeKey(s []string, level int) string {

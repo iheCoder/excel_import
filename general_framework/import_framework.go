@@ -81,6 +81,18 @@ func WithMiddlewares(middlewares ...GeneralMiddleware) OptionFunc {
 	}
 }
 
+func WithCorrectCheckers(checkers ...excel_import.CorrectnessChecker) OptionFunc {
+	return func(framework *ImportFramework) {
+		framework.correctCheckers = append(framework.correctCheckers, checkers...)
+	}
+}
+
+func WithRowFilter(filter excel_import.RowFilter) OptionFunc {
+	return func(framework *ImportFramework) {
+		framework.control.RowFilter = filter
+	}
+}
+
 func NewImporterFramework(db *gorm.DB, importers map[RowType]SectionImporter, recognizer SectionRecognizer, options ...OptionFunc) *ImportFramework {
 	ki := &ImportFramework{
 		db:               db,
@@ -197,6 +209,11 @@ func (k *ImportFramework) preHandleRawContent(contents [][]string) [][]string {
 				break
 			}
 		}
+	}
+
+	// filter the rows
+	if k.control.RowFilter != nil {
+		contents = util.FilterRows(contents, k.control.RowFilter)
 	}
 
 	// format the content

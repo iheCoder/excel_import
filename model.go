@@ -59,4 +59,3 @@ type GormTag struct {
 	// tagName: type
 	Type string
 }
-type EndFunc func(s []string) bool

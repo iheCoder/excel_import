@@ -121,6 +121,12 @@ func WithMiddlewares(middlewares ...TreeMiddleware) OptionFunc {
 	}
 }
 
+func WithRowFilter(f excel_import.RowFilter) OptionFunc {
+	return func(framework *TreeImportFramework) {
+		framework.ocfg.rowFilterFunc = f
+	}
+}
+
 func (t *TreeImportFramework) WithOption(option OptionFunc) *TreeImportFramework {
 	option(t)
 	return t
@@ -209,6 +215,11 @@ func (t *TreeImportFramework) preHandleRawContent(contents [][]string) [][]strin
 				break
 			}
 		}
+	}
+
+	// filter the row
+	if t.ocfg.rowFilterFunc != nil {
+		contents = util.FilterRows(contents, t.ocfg.rowFilterFunc)
 	}
 
 	// format the content

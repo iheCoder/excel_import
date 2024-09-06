@@ -84,6 +84,8 @@ type ImportControl struct {
 	EnableBatch bool
 	// the batch size
 	BatchSize int
+	// the row filter function
+	RowFilter excel_import.RowFilter
 }
 
 var defaultImportControl = ImportControl{

@@ -19,7 +19,14 @@ type PostHandler interface {
 	PostHandle(tx *gorm.DB) error
 }
 
+// CellFormatter format the cell content.
 type CellFormatter func(s string) string
+
+// EndFunc is the end condition of the excel contents
+type EndFunc func(s []string) bool
+
+// RowFilter filter the row
+type RowFilter func(s []string) bool
 
 type CorrectnessChecker interface {
 	// PreCollect pre collect the data.
