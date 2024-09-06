@@ -1,4 +1,4 @@
-package general_framework
+package features
 
 import (
 	"excel_import"
@@ -18,41 +18,31 @@ var (
 	}
 )
 
-type TagCommonTypeCheck struct {
+type TagFormatChecker struct {
 	tcfFuncMap map[excel_import.FormatCheckFunc]excel_import.FormatChecker
 }
 
-func NewTagCommonTypeCheck() *TagCommonTypeCheck {
-	return &TagCommonTypeCheck{
+func NewTagCommonFormatCheck() *TagFormatChecker {
+	return &TagFormatChecker{
 		tcfFuncMap: tcfFuncMap,
 	}
 }
 
-func (t *TagCommonTypeCheck) CheckContents(contents [][]string, tags []*excel_import.ExcelImportTagAttr) bool {
-	contents = util.ReverseMatrix(contents)
-
-	for _, tag := range tags {
-		if !t.checkContents(contents[tag.ColumnIndex], tag) {
-			return false
+func (t *TagFormatChecker) CheckContents(content []string, tags []*excel_import.ExcelImportTagAttr) error {
+	errBuilder := util.NewErrBuilder()
+	for i, c := range content {
+		if err := t.checkFormatFunc(tags[i], c); err != nil {
+			errBuilder.AddWithContent(c, err)
 		}
 	}
-	return true
+	return errBuilder.Build()
 }
 
-func (t *TagCommonTypeCheck) checkContents(content []string, tag *excel_import.ExcelImportTagAttr) bool {
-	for _, c := range content {
-		if !t.checkTypeFunc(tag, c) {
-			return false
-		}
-	}
-	return true
-}
-
-// checkTypeFunc checks the type of the given string.
-func (t *TagCommonTypeCheck) checkTypeFunc(tag *excel_import.ExcelImportTagAttr, str string) bool {
+// checkFormatFunc checks the type of the given string.
+func (t *TagFormatChecker) checkFormatFunc(tag *excel_import.ExcelImportTagAttr, str string) error {
 	// if tcf is not set or str is empty, return true
 	if len(tag.FCF) == 0 || len(str) == 0 {
-		return true
+		return nil
 	}
 
 	// use the tcf function to check the type
@@ -60,5 +50,5 @@ func (t *TagCommonTypeCheck) checkTypeFunc(tag *excel_import.ExcelImportTagAttr,
 		return f(str)
 	}
 
-	return true
+	return nil
 }

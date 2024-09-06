@@ -10,8 +10,8 @@ const (
 )
 
 type ErrBuilder struct {
-	errs    []error
-	content string
+	errs   []error
+	header string
 }
 
 func NewErrBuilder() *ErrBuilder {
@@ -28,8 +28,16 @@ func (eb *ErrBuilder) Add(err error) {
 	eb.errs = append(eb.errs, err)
 }
 
-func (eb *ErrBuilder) AddContent(content string) {
-	eb.content = content
+func (eb *ErrBuilder) AddWithContent(s string, err error) {
+	if err == nil {
+		return
+	}
+
+	eb.errs = append(eb.errs, errors.New(s+": "+err.Error()))
+}
+
+func (eb *ErrBuilder) AddHeader(header string) {
+	eb.header = header
 }
 
 func (eb *ErrBuilder) Build() error {
@@ -37,7 +45,7 @@ func (eb *ErrBuilder) Build() error {
 		return nil
 	}
 
-	errStr := eb.content
+	errStr := eb.header
 	if errStr == "" {
 		errStr = "数据错误: "
 	}
@@ -46,7 +54,7 @@ func (eb *ErrBuilder) Build() error {
 		if err == nil {
 			continue
 		}
-		errStr += err.Error() + "; "
+		errStr += err.Error() + "; \n"
 	}
 
 	return errors.New(errStr)
