@@ -73,6 +73,28 @@ func writeXLSXByStartRow(path string, content map[int][]string, startRow int) er
 	return f.Save(path)
 }
 
+// ReadExcelValidContentInCommonCase read excel content in common case, support CSV and XLSX format
+// the common case is that the end row is the row that all cells are empty or the first cell is empty, and skip the header
+func ReadExcelValidContentInCommonCase(path string) ([][]string, error) {
+	contents, err := ReadExcelContent(path)
+	if err != nil {
+		return nil, err
+	}
+
+	// skip header
+	contents = contents[1:]
+
+	// end row
+	for i, content := range contents {
+		if DefaultRowEndFunc(content) {
+			return contents[:i], nil
+		}
+	}
+
+	return contents, nil
+}
+
+// ReadExcelContent read excel content from file, support CSV and XLSX format
 func ReadExcelContent(path string) ([][]string, error) {
 	ext := strings.ToLower(filepath.Ext(path))
 	switch ext {
