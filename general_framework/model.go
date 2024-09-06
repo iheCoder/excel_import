@@ -11,7 +11,6 @@ type ColumnType int
 type FieldsOrder int
 
 type OptionFunc func(*ImportFramework)
-type EndFunc func(s []string) bool
 
 type RawWhole struct {
 	rawContents []*RawContent
@@ -71,7 +70,7 @@ type ImportControl struct {
 	// the start row of the content
 	StartRow int
 	// the end condition of the function
-	Ef EndFunc
+	Ef excel_import.EndFunc
 	// enable type check
 	EnableTypeCheck bool
 	// enable import parallel

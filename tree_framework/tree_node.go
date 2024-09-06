@@ -163,7 +163,7 @@ type treeImportOptionalCfg struct {
 	// the start row of the content
 	startRow int
 	// the end condition of the function
-	ef RowEndFunc
+	ef excel_import.EndFunc
 	// the end condition of the tree column
 	treeColEndFunc ColEndFunc
 	// the cell format function

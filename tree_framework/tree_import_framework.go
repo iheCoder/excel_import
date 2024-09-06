@@ -91,7 +91,7 @@ func WithStartRow(sr int) OptionFunc {
 	}
 }
 
-func WithEndFunc(ef RowEndFunc) OptionFunc {
+func WithEndFunc(ef excel_import.EndFunc) OptionFunc {
 	return func(framework *TreeImportFramework) {
 		framework.ocfg.ef = ef
 	}

@@ -38,6 +38,5 @@ type TreeMiddleware interface {
 }
 
 type GenerateNodeKey func(s []string, level int) string
-type RowEndFunc func(s []string) bool
 type ColEndFunc func(next string) bool
 type OptionFunc func(*TreeImportFramework)
