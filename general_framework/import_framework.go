@@ -81,12 +81,6 @@ func WithMiddlewares(middlewares ...GeneralMiddleware) OptionFunc {
 	}
 }
 
-func WithCorrectCheckers(checkers ...excel_import.CorrectnessChecker) OptionFunc {
-	return func(framework *ImportFramework) {
-		framework.correctCheckers = append(framework.correctCheckers, checkers...)
-	}
-}
-
 func WithRowFilter(filter excel_import.RowFilter) OptionFunc {
 	return func(framework *ImportFramework) {
 		framework.control.RowFilter = filter

@@ -20,6 +20,7 @@ type TreeImportFramework struct {
 	postHandler      excel_import.PostHandler
 	preHandler       TreePreHandler
 	middlewares      []TreeMiddleware
+	correctCheckers  []excel_import.CorrectnessChecker
 }
 
 func NewTreeImportStrictOrderFramework(db *gorm.DB, treeBoundary, colCount int, modelFac excel_import.RowModelFactory, importer LevelImporter, options ...OptionFunc) *TreeImportFramework {
@@ -180,6 +181,22 @@ func (t *TreeImportFramework) Import(path string) error {
 		err = t.postHandler.PostHandle(t.db)
 		if err != nil {
 			fmt.Printf("post handler failed: %v\n", err)
+			return err
+		}
+	}
+
+	return nil
+}
+
+// EnableCorrectnessCheck enable the correctness check.
+// must be called before Import.
+func (t *TreeImportFramework) EnableCorrectnessCheck(correctnessCheckers ...excel_import.CorrectnessChecker) error {
+	if len(correctnessCheckers) == 0 {
+		correctnessCheckers = t.correctCheckers
+	}
+
+	for _, checker := range t.correctCheckers {
+		if err := checker.PreCollect(t.db); err != nil {
 			return err
 		}
 	}
@@ -436,5 +453,15 @@ func (t *TreeImportFramework) findParent(s []string, level int) *TreeNode {
 	if node, ok := t.nodes[key]; ok {
 		return node
 	}
+	return nil
+}
+
+func (t *TreeImportFramework) CheckCorrect() error {
+	for _, checker := range t.correctCheckers {
+		if err := checker.CheckCorrect(t.db); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
