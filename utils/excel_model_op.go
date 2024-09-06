@@ -37,21 +37,68 @@ var (
 	}
 )
 
+func GenerateExcelModelString(path string, structName string) (string, error) {
+	// read excel content
+	contents, err := ReadExcelContent(path)
+	if err != nil {
+		return "", err
+	}
+
+	// get field comments
+	fieldComments := make([]string, 0)
+	for _, v := range contents[0] {
+		v = FormatCell(v)
+		if len(v) == 0 {
+			break
+		}
+
+		fieldComments = append(fieldComments, v)
+	}
+
+	// end row
+	n := len(fieldComments)
+	contents = contents[1:]
+	for i, v := range contents {
+		if DefaultRowEndFunc(v) {
+			contents = contents[:i]
+			break
+		}
+	}
+
+	// revise contents column length as n
+	for i, v := range contents {
+		if len(v) > n {
+			contents[i] = v[:n]
+		}
+		if len(v) < n {
+			contents[i] = append(v, make([]string, n-len(v))...)
+		}
+	}
+
+	// inverse the row and column
+	contents = (contents)
+
+	return GenerateStructString(structName, fieldComments, ReverseMatrix(contents)), nil
+}
+
 // GenerateStructString generates a string representation of a struct.
 // The struct is defined by the structName and the contents.
 // the field name is english word ascending order
 // the field type is check by the contents
 // the field comment is the fieldComment combined with number ascending order
 func GenerateStructString(structName string, fieldComment []string, contents [][]string) string {
+	if len(contents) == 0 {
+		return ""
+	}
+
 	info := StructInfo{
 		Name: structName,
 	}
-
 	for i, v := range contents {
 		info.Fields = append(info.Fields, Field{
 			Name:    getExcelColIndex(i),
 			Type:    detectType(v),
-			Comment: fmt.Sprintf("%s\t%d", fieldComment[i], i+1),
+			Comment: fmt.Sprintf("%s\t%d", fieldComment[i], i),
 		})
 	}
 
@@ -93,6 +140,10 @@ func resetTypeCodes() {
 }
 
 func checkType(s string) {
+	if len(s) == 0 {
+		return
+	}
+
 	if intTypeCode.Is {
 		_, err := strconv.Atoi(s)
 		if err != nil {

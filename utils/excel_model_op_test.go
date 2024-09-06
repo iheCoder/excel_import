@@ -90,7 +90,7 @@ func TestGenerateStructString(t *testing.T) {
 				{"1", "2"},
 				{"a", "b"},
 			},
-			expected: "type test struct {\n\tA int // id\t1\n\tB string // name\t2\n}\n",
+			expected: "type test struct {\n\tA int // id\t0\n\tB string // name\t1\n}\n",
 		},
 		{
 			structName: "test",
@@ -100,7 +100,7 @@ func TestGenerateStructString(t *testing.T) {
 			contents: [][]string{
 				{"1"},
 			},
-			expected: "type test struct {\n\tA int // 你好\t1\n}\n",
+			expected: "type test struct {\n\tA int // 你好\t0\n}\n",
 		},
 	}
 
@@ -108,5 +108,19 @@ func TestGenerateStructString(t *testing.T) {
 		if GenerateStructString(test.structName, test.fieldComment, test.contents) != test.expected {
 			t.Errorf("expected:\n %s, got:\n %s", test.expected, GenerateStructString(test.structName, test.fieldComment, test.contents))
 		}
+	}
+}
+
+func TestGenerateExcelModelString(t *testing.T) {
+	path := "../testdata/excel_test_resource.xlsx"
+	structName := "resourceTest"
+	expected := "type resourceTest struct {\n\tA string // 名称\t0\n\tB int // 类型\t1\n\tC string // 饮料品牌\t2\n\tD string // 鞋品牌\t3\n\tE int // 尺码\t4\n\tF string // 建筑额外信息\t5\n}\n"
+	structStr, err := GenerateExcelModelString(path, structName)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if structStr != expected {
+		t.Errorf("expected:\n %s, got:\n %s", expected, structStr)
 	}
 }
