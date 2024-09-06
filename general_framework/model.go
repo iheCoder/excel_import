@@ -1,6 +1,9 @@
 package general_framework
 
-import "excel_import"
+import (
+	"excel_import"
+	util "excel_import/utils"
+)
 
 type RowType string
 type ColumnType int
@@ -86,10 +89,6 @@ type ImportControl struct {
 
 var defaultImportControl = ImportControl{
 	StartRow:  1,
-	Ef:        defaultRawEndFunc,
+	Ef:        util.DefaultRowEndFunc,
 	BatchSize: defaultBatchSize,
-}
-
-func defaultRawEndFunc(s []string) bool {
-	return len(s) == 0 || len(s[0]) == 0
 }

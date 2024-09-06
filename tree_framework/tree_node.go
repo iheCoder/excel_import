@@ -2,6 +2,7 @@ package tree_framework
 
 import (
 	"excel_import"
+	util "excel_import/utils"
 	"fmt"
 )
 
@@ -11,7 +12,7 @@ var (
 		genKeyFunc:     defaultKeyGen,
 		startRow:       1,
 		treeColEndFunc: defaultTreeColEndFunc,
-		ef:             defaultRawEndFunc,
+		ef:             util.DefaultRowEndFunc,
 	}
 )
 
@@ -184,8 +185,4 @@ func genPrefixNodeKey(s []string, level int) string {
 
 func defaultTreeColEndFunc(next string) bool {
 	return len(next) == 0
-}
-
-func defaultRawEndFunc(s []string) bool {
-	return len(s) == 0 || len(s[0]) == 0
 }
