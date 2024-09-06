@@ -40,7 +40,7 @@ func TestCheckIsUrl(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		if CheckIsUrl(test.url) != test.expected {
+		if !checkAsExpected(CheckIsUrl(test.url), test.expected) {
 			t.Fatalf("expected %v, got %v", test.expected, CheckIsUrl(test.url))
 		}
 	}
@@ -80,7 +80,7 @@ func TestCheckIsImageUrl(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		if CheckIsImageUrl(test.url) != test.expected {
+		if !checkAsExpected(CheckIsImageUrl(test.url), test.expected) {
 			t.Fatalf("expected %v, got %v", test.expected, CheckIsImageUrl(test.url))
 		}
 	}
@@ -120,7 +120,7 @@ func TestCheckIsContainsChinese(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		if CheckIsContainsChinese(test.str) != test.expected {
+		if !checkAsExpected(CheckIsContainsChinese(test.str), test.expected) {
 			t.Fatalf("expected %v, got %v", test.expected, CheckIsContainsChinese(test.str))
 		}
 	}
@@ -160,7 +160,7 @@ func TestCheckIsContainsEnglish(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		if CheckIsContainsEnglish(test.str) != test.expected {
+		if !checkAsExpected(CheckIsContainsEnglish(test.str), test.expected) {
 			t.Fatalf("expected %v, got %v", test.expected, CheckIsContainsEnglish(test.str))
 		}
 	}
@@ -200,7 +200,7 @@ func TestCheckIsPinyin(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		if CheckIsPinyin(test.str) != test.expected {
+		if !checkAsExpected(CheckIsPinyin(test.str), test.expected) {
 			t.Fatalf("str %s expected %v, got %v", test.str, test.expected, CheckIsPinyin(test.str))
 		}
 	}
@@ -240,8 +240,12 @@ func TestCheckIsHash(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		if CheckIsHash(test.str) != test.expected {
+		if !checkAsExpected(CheckIsHash(test.str), test.expected) {
 			t.Fatalf("str %s expected %v, got %v", test.str, test.expected, CheckIsHash(test.str))
 		}
 	}
+}
+
+func checkAsExpected(err error, expected bool) bool {
+	return (err == nil) == expected
 }
