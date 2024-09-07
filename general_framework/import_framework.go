@@ -241,6 +241,7 @@ func (k *ImportFramework) preHandleRawContent(contents [][]string) [][]string {
 }
 
 func (k *ImportFramework) parseRawWhole(contents [][]string) (*RawWhole, error) {
+	whole := &RawWhole{}
 	// parse model tags
 	var tags []*excel_import.ExcelImportTagAttr
 	if k.rowRawModel != nil {
@@ -267,15 +268,15 @@ func (k *ImportFramework) parseRawWhole(contents [][]string) (*RawWhole, error) 
 			Content:     content,
 			Model:       model,
 			Row:         i + k.control.StartRow,
+			whole:       whole,
 		})
 	}
 
-	return &RawWhole{
-		rawContents: rawContents,
-		modelInfo: &ModelsInfo{
-			excelModelTags: tags,
-		},
-	}, nil
+	whole.rawContents = rawContents
+	whole.modelInfo = &ModelsInfo{
+		excelModelTags: tags,
+	}
+	return whole, nil
 }
 
 func (k *ImportFramework) checkContent(whole *RawWhole) error {
