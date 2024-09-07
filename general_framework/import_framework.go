@@ -109,9 +109,7 @@ func NewImporterFramework(db *gorm.DB, importers map[RowType]SectionImporter, re
 		ki.middlewares = append(ki.middlewares, newBatchSupportFeature(ki.control.BatchSize))
 	}
 
-	if ki.control.EnableTagFormatCheck {
-		ki.featureMgr.EnableTagFormatChecker()
-	}
+	ki.featureMgr.EnableTagFormatChecker()
 
 	return ki
 }
@@ -282,22 +280,22 @@ func (k *ImportFramework) parseRawWhole(contents [][]string) (*RawWhole, error) 
 func (k *ImportFramework) checkContent(whole *RawWhole) error {
 	var err error
 	var checkFailed bool
-	for i, rc := range whole.rawContents {
+	for _, rc := range whole.rawContents {
+		// check the content format
 		var terr error
-		if k.control.EnableTagFormatCheck {
-			if terr = k.checkFormatError(rc); terr != nil {
-				checkFailed = true
-			}
+		err = nil
+		if terr = k.checkFormatError(rc); terr != nil {
+			checkFailed = true
 		}
 
+		// check the content valid for user defined checkers
 		sectionType := rc.SectionType
 		checker, ok := k.checkers[sectionType]
-		if !ok {
-			continue
+		if ok {
+			err = checker.CheckValid(rc)
 		}
 
-		err = checker.CheckValid(rc)
-
+		// record the error
 		if err != nil || terr != nil {
 			checkFailed = true
 			if err = k.recorder.RecordCheckError(util.CombineErrors(rc.GetRow(), terr, err)); err != nil {

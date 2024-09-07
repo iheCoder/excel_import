@@ -106,9 +106,6 @@ type ImportControl struct {
 	StartRow int
 	// the end condition of the function
 	Ef excel_import.EndFunc
-	// enable tag format check
-	// must be set model factory
-	EnableTagFormatCheck bool
 	// enable import parallel
 	EnableParallel bool
 	// the max parallel number
