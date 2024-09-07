@@ -85,6 +85,9 @@ func NewTreeImportFramework(db *gorm.DB, cfg *TreeImportCfg, rootImporter LevelI
 		panic("rawModel factory should not nil")
 	}
 
+	// enable format check feature
+	tif.featureMgr.EnableTagFormatChecker()
+
 	return tif
 }
 
@@ -249,6 +252,8 @@ func (t *TreeImportFramework) checkContent(whole *rawCellWhole) error {
 			}
 
 			if terr != nil {
+				// record the check error
+				// i+t.ocfg.startRow is the real row number, if no filter row
 				if err = t.recorder.RecordCheckError(util.CombineErrors(i+t.ocfg.startRow, terr)); err != nil {
 					return err
 				}
