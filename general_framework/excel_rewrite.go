@@ -29,10 +29,9 @@ func (e *ExcelRewriterMiddleware) PreImportHandle(tx *gorm.DB, whole *RawWhole) 
 	if whole == nil || len(whole.rawContents) == 0 {
 		return nil
 	}
-	model := whole.rawContents[0].GetModel()
 
 	// get model excel import tag attr
-	attrs := util.ParseTag(model)
+	attrs := whole.GetModelTags()
 
 	// set attrs
 	e.attrs = attrs
