@@ -29,7 +29,7 @@ func (e *ExcelRewriterMiddleware) PreImportHandle(tx *gorm.DB, whole *RawWhole) 
 	if whole == nil || len(whole.rawContents) == 0 {
 		return nil
 	}
-	model := whole.rawContents[0].Model
+	model := whole.rawContents[0].GetModel()
 
 	// get model excel import tag attr
 	attrs := util.ParseTag(model)
@@ -42,7 +42,7 @@ func (e *ExcelRewriterMiddleware) PreImportHandle(tx *gorm.DB, whole *RawWhole) 
 
 func (e *ExcelRewriterMiddleware) PostImportSectionHandle(tx *gorm.DB, s *RawContent) error {
 	// get models
-	model := s.Model
+	model := s.GetModel()
 
 	// iterate models and write to content
 	for i, attr := range e.attrs {

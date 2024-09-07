@@ -2,6 +2,7 @@ package util
 
 import (
 	"errors"
+	"excel_import"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -101,6 +102,16 @@ func FillModelByTag(model any, values []string) error {
 	fieldOrders := make([]int, len(attrs))
 	for i, attr := range attrs {
 		fieldOrders[i] = attr.ColumnIndex
+	}
+
+	return FillModel(model, values, fieldOrders)
+}
+
+// FillModelByTags fill model by tags
+func FillModelByTags(tags []*excel_import.ExcelImportTagAttr, model any, values []string) error {
+	fieldOrders := make([]int, len(tags))
+	for i, tag := range tags {
+		fieldOrders[i] = tag.ColumnIndex
 	}
 
 	return FillModel(model, values, fieldOrders)

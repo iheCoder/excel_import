@@ -14,6 +14,17 @@ type OptionFunc func(*ImportFramework)
 
 type RawWhole struct {
 	rawContents []*RawContent
+
+	modelInfo *ModelsInfo
+}
+
+type ModelsInfo struct {
+	// the model tags of the rawContent Model
+	excelModelTags []*excel_import.ExcelImportTagAttr
+}
+
+func (r *RawWhole) GetModelTags() []*excel_import.ExcelImportTagAttr {
+	return r.modelInfo.excelModelTags
 }
 
 type RawContent struct {
@@ -23,22 +34,21 @@ type RawContent struct {
 	SectionType RowType
 	// the content of the row
 	Content []string
-	// deprecated
+	// the model of the row
 	Model any
 	// the import effect.
 	// for example, the inserted model or updated model
 	effect importEffect
-	// the model info of the row
-	info ModelInfo
+	// the whole operator
+	whole *RawWhole
 }
 
-type ModelInfo struct {
-	Model    any
-	modelTag []*excel_import.ExcelImportTagAttr
+func (r *RawContent) GetModelTags() []*excel_import.ExcelImportTagAttr {
+	return r.whole.GetModelTags()
 }
 
 func (r *RawContent) GetModel() any {
-	return r.info.Model
+	return r.Model
 }
 
 // SetInsertModel set the inserted model

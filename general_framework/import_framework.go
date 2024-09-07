@@ -241,6 +241,13 @@ func (k *ImportFramework) preHandleRawContent(contents [][]string) [][]string {
 }
 
 func (k *ImportFramework) parseRawWhole(contents [][]string) (*RawWhole, error) {
+	// parse model tags
+	var tags []*excel_import.ExcelImportTagAttr
+	if k.rowRawModel != nil {
+		model := k.rowRawModel.GetModel()
+		tags = util.ParseTag(model)
+	}
+
 	rawContents := make([]*RawContent, 0, len(contents))
 	for i, content := range contents {
 		// recognize the section type
@@ -250,7 +257,7 @@ func (k *ImportFramework) parseRawWhole(contents [][]string) (*RawWhole, error) 
 		var model any
 		if k.rowRawModel != nil {
 			model = k.rowRawModel.GetModel()
-			if err := util.FillModelByTag(model, content); err != nil {
+			if err := util.FillModelByTags(tags, model, content); err != nil {
 				return nil, err
 			}
 		}
@@ -258,13 +265,16 @@ func (k *ImportFramework) parseRawWhole(contents [][]string) (*RawWhole, error) 
 		rawContents = append(rawContents, &RawContent{
 			SectionType: sectionType,
 			Content:     content,
-			info:        ModelInfo{Model: model},
+			Model:       model,
 			Row:         i + k.control.StartRow,
 		})
 	}
 
 	return &RawWhole{
 		rawContents: rawContents,
+		modelInfo: &ModelsInfo{
+			excelModelTags: tags,
+		},
 	}, nil
 }
 
