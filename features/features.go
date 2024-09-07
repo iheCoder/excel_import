@@ -28,7 +28,9 @@ func (f *FeatureMgr) EnableTagFormatChecker() {
 	f.tagFormatChecker = NewTagCommonFormatCheck()
 }
 
+// CheckContents checks the contents.
 func (f *FeatureMgr) CheckContents(contents []string, tags []*excel_import.ExcelImportTagAttr) error {
+	// if format check status is init, conclude the format check status
 	if f.formatCheckStatus == formatCheckTagInit {
 		f.formatCheckStatus = formatCheckTagNotExists
 		for _, tag := range tags {
@@ -39,9 +41,19 @@ func (f *FeatureMgr) CheckContents(contents []string, tags []*excel_import.Excel
 		}
 	}
 
+	// if format check tag is not exists or tag format checker is nil, return nil
 	if f.formatCheckStatus == formatCheckTagNotExists || f.tagFormatChecker == nil {
 		return nil
 	}
 
+	// check contents
 	return f.tagFormatChecker.CheckContents(contents, tags)
+}
+
+// RegisterFormatChecker registers the format checker.
+func (f *FeatureMgr) RegisterFormatChecker(fcf excel_import.FormatCheckFunc, fc excel_import.FormatChecker) {
+	if f.tagFormatChecker == nil {
+		return
+	}
+	f.tagFormatChecker.RegisterFormatChecker(fcf, fc)
 }

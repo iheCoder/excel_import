@@ -28,6 +28,10 @@ func NewTagCommonFormatCheck() *TagFormatChecker {
 	}
 }
 
+func (t *TagFormatChecker) RegisterFormatChecker(fcf excel_import.FormatCheckFunc, fc excel_import.FormatChecker) {
+	t.tcfFuncMap[fcf] = fc
+}
+
 func (t *TagFormatChecker) CheckContents(content []string, tags []*excel_import.ExcelImportTagAttr) error {
 	errBuilder := util.NewErrBuilder()
 	for i, c := range content {
