@@ -47,6 +47,10 @@ func (r *RawContent) GetModelTags() []*excel_import.ExcelImportTagAttr {
 	return r.whole.GetModelTags()
 }
 
+func (r *RawContent) GetContent() []string {
+	return r.Content
+}
+
 func (r *RawContent) GetModel() any {
 	return r.Model
 }

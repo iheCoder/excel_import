@@ -284,7 +284,7 @@ func (k *ImportFramework) checkContent(whole *RawWhole) error {
 	for i, rc := range whole.rawContents {
 		var terr error
 		if k.control.EnableTagFormatCheck {
-			if terr = k.checkTypeError(rc); terr != nil {
+			if terr = k.checkFormatError(rc); terr != nil {
 				checkFailed = true
 			}
 		}
@@ -311,14 +311,14 @@ func (k *ImportFramework) checkContent(whole *RawWhole) error {
 	return nil
 }
 
-func (k *ImportFramework) checkTypeError(rc *RawContent) error {
+func (k *ImportFramework) checkFormatError(rc *RawContent) error {
 	// no need to check if the model is nil
 	if k.rowRawModel == nil {
 		return nil
 	}
 
-	// check the type of the model
-	return util.CheckModelOrder(k.rowRawModel.GetModel(), rc.Content)
+	// check the content format by the model tags
+	return k.featureMgr.CheckContents(rc.GetContent(), rc.GetModelTags())
 }
 
 func (k *ImportFramework) importContent(whole *RawWhole) error {
@@ -340,7 +340,7 @@ func (k *ImportFramework) importContentParallel(whole *RawWhole) error {
 		sectionType := content.SectionType
 		importer, ok := k.importers[sectionType]
 		if !ok {
-			fmt.Printf("importer not found for section type: %s, content: %s \n", sectionType, content.Content)
+			fmt.Printf("importer not found for section type: %s, content: %s \n", sectionType, content.GetContent())
 			continue
 		}
 
@@ -366,7 +366,7 @@ func (k *ImportFramework) importContentSerial(whole *RawWhole) error {
 		sectionType := content.SectionType
 		importer, ok := k.importers[sectionType]
 		if !ok {
-			fmt.Printf("importer not found for section type: %s, content: %s \n", sectionType, content.Content)
+			fmt.Printf("importer not found for section type: %s, content: %s \n", sectionType, content.GetContent())
 			continue
 		}
 
