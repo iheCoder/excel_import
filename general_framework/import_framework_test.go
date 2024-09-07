@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 	"os"
 	"strconv"
+	"strings"
 	"testing"
 )
 
@@ -356,4 +357,54 @@ type ResourceTestModel struct {
 
 func (r *ResourceTestModel) TableName() string {
 	return "resource"
+}
+
+func TestImportFramework_ImportOneSectionWithFormatCheck(t *testing.T) {
+	path := "../testdata/excel_test_format_check.xlsx"
+	framework := NewImporterOneSectionFramework(nil, &doNothingImporter{}, WithSimpleModelFactory(&formatCheckExcelModel{}))
+
+	if err := framework.Import(path); err == nil {
+		t.Fatal("expected error")
+	}
+
+	// read check_failed.csv and check
+	checkFailedPath := "check_failed.csv"
+	content, err := util.ReadExcelContent(checkFailedPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expectedContent := []string{
+		util.ErrInvalidURL.Error(),
+		util.ErrInvalidEnglish.Error(),
+		util.ErrInvalidChinese.Error(),
+	}
+
+	for i, row := range content {
+		if len(row) < 1 || !strings.Contains(row[0], expectedContent[i]) {
+			t.Fatalf("content is %s, expected %s", row[0], expectedContent[i])
+		}
+	}
+
+	// delete check_failed.csv
+	if err = os.Remove(checkFailedPath); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log("success")
+}
+
+type formatCheckExcelModel struct {
+	Fruit       string  `exi:"fcf:cn"`
+	EnglishName string  `exi:"fcf:en"`
+	Price       float64 `exi:"fcf:float"`
+	Url         string  `exi:"fcf:url"`
+	Hash        string  `exi:"fcf:hash"`
+}
+
+type doNothingImporter struct {
+}
+
+func (di *doNothingImporter) ImportSection(tx *gorm.DB, s *RawContent) error {
+	return nil
 }
