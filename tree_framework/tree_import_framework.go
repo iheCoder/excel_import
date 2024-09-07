@@ -1,10 +1,16 @@
 package tree_framework
 
 import (
+	"errors"
 	"excel_import"
+	"excel_import/features"
 	"excel_import/utils"
 	"fmt"
 	"gorm.io/gorm"
+)
+
+var (
+	errContentCheckFailed = errors.New("content check failed")
 )
 
 type TreeImportFramework struct {
@@ -21,6 +27,7 @@ type TreeImportFramework struct {
 	preHandler       TreePreHandler
 	middlewares      []TreeMiddleware
 	correctCheckers  []excel_import.CorrectnessChecker
+	featureMgr       *features.FeatureMgr
 }
 
 func NewTreeImportStrictOrderFramework(db *gorm.DB, treeBoundary, colCount int, modelFac excel_import.RowModelFactory, importer LevelImporter, options ...OptionFunc) *TreeImportFramework {
@@ -67,6 +74,7 @@ func NewTreeImportFramework(db *gorm.DB, cfg *TreeImportCfg, rootImporter LevelI
 		ocfg:             defaultOptCfg,
 		recorder:         util.NewDefaultUnexpectedRecorder(),
 		progressReporter: util.NewProgressReporter(true),
+		featureMgr:       features.NewFeatureMgr(),
 	}
 
 	for _, option := range options {
@@ -128,6 +136,12 @@ func WithRowFilter(f excel_import.RowFilter) OptionFunc {
 	}
 }
 
+func WithEnableFormatCheck() OptionFunc {
+	return func(framework *TreeImportFramework) {
+		framework.ocfg.enableFormatChecker = true
+	}
+}
+
 func (t *TreeImportFramework) WithOption(option OptionFunc) *TreeImportFramework {
 	option(t)
 	return t
@@ -141,6 +155,12 @@ func (t *TreeImportFramework) Import(path string) error {
 	whole, err := t.parseContent(path)
 	if err != nil {
 		fmt.Printf("parse file content failed: %v\n", err)
+		return err
+	}
+
+	// check the content
+	if err = t.checkContent(whole); err != nil {
+		fmt.Printf("check content failed: %v\n", err)
 		return err
 	}
 
@@ -218,6 +238,31 @@ func (t *TreeImportFramework) parseContent(path string) (*rawCellWhole, error) {
 	return t.parseRawWhole(content)
 }
 
+func (t *TreeImportFramework) checkContent(whole *rawCellWhole) error {
+	var err error
+	var checkFailed bool
+	if t.ocfg.enableFormatChecker {
+		var terr error
+		for i, row := range whole.contents {
+			if terr = t.featureMgr.CheckContents(row, whole.GetModelTags()); terr != nil {
+				checkFailed = true
+			}
+
+			if terr != nil {
+				if err = t.recorder.RecordCheckError(util.CombineErrors(i+t.ocfg.startRow, terr)); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	if checkFailed {
+		return errContentCheckFailed
+	}
+
+	return nil
+}
+
 func (t *TreeImportFramework) preHandleRawContent(contents [][]string) [][]string {
 	// skip the header default
 	if t.ocfg.startRow > 0 {
@@ -268,6 +313,9 @@ func (t *TreeImportFramework) parseRawWhole(content [][]string) (*rawCellWhole, 
 		return nil, err
 	}
 
+	// parse model tags
+	tags := util.ParseTag(t.cfg.ModelFac.GetModel())
+
 	cellContents := make([][]rawCellContent, len(content))
 	models := make([]any, len(content))
 	for i, row := range content {
@@ -285,26 +333,28 @@ func (t *TreeImportFramework) parseRawWhole(content [][]string) (*rawCellWhole, 
 		var model any
 		if t.cfg.ModelFac != nil {
 			model = t.cfg.ModelFac.GetModel()
-			if err = util.FillModelByTag(model, row); err != nil {
+			if err = util.FillModelByTags(tags, model, row); err != nil {
 				return nil, err
 			}
 		}
 		models[i] = model
 	}
 
-	// fill the rawModel into the leaf tree node
-	t.fillModelIntoLeafNode(root, models)
-
 	// calculate the total node count
 	totalNodeCount := t.calculateTotalNodeCount(root)
 
-	return &rawCellWhole{
+	whole := &rawCellWhole{
 		contents:       content,
 		cellContents:   cellContents,
 		root:           root,
 		totalNodeCount: totalNodeCount,
 		models:         models,
-	}, nil
+		modelAttrs:     tags,
+	}
+	// fill the rawModel into the leaf tree node
+	t.fillModelIntoLeafNode(root, models, whole)
+
+	return whole, nil
 }
 
 func (t *TreeImportFramework) calculateTotalNodeCount(root *TreeNode) int {
@@ -320,11 +370,15 @@ func (t *TreeImportFramework) calculateTotalNodeCount(root *TreeNode) int {
 	return count
 }
 
-func (t *TreeImportFramework) fillModelIntoLeafNode(node *TreeNode, models []any) {
+func (t *TreeImportFramework) fillModelIntoLeafNode(node *TreeNode, models []any, whole *rawCellWhole) {
 	if node == nil {
 		return
 	}
 
+	// fill the model into the node
+	node.whole = whole
+
+	// fill the model into the leaf node
 	if node.CheckIsLeaf() {
 		for _, nodeItem := range node.extra.items {
 			if nodeItem.row < t.ocfg.startRow || nodeItem.row >= t.ocfg.startRow+len(models) {
@@ -338,7 +392,7 @@ func (t *TreeImportFramework) fillModelIntoLeafNode(node *TreeNode, models []any
 	}
 
 	for _, child := range node.children {
-		t.fillModelIntoLeafNode(child, models)
+		t.fillModelIntoLeafNode(child, models, whole)
 	}
 }
 

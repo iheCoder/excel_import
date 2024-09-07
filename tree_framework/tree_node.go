@@ -27,6 +27,11 @@ type rawCellWhole struct {
 	root           *TreeNode
 	totalNodeCount int
 	models         []any
+	modelAttrs     []*excel_import.ExcelImportTagAttr
+}
+
+func (r *rawCellWhole) GetModelTags() []*excel_import.ExcelImportTagAttr {
+	return r.modelAttrs
 }
 
 func (r *rawCellWhole) GetRoot() *TreeNode {
@@ -53,6 +58,7 @@ type TreeNode struct {
 	rank     int
 	children []*TreeNode
 	extra    *TreeNodeExtra
+	whole    *rawCellWhole
 }
 
 type TreeNodeExtra struct {
@@ -66,6 +72,10 @@ type TreeNodeItem struct {
 
 func (t *TreeNode) GetKey() string {
 	return t.key
+}
+
+func (t *TreeNode) GetModelAttrs() []*excel_import.ExcelImportTagAttr {
+	return t.whole.GetModelTags()
 }
 
 // SetKey set the key of the tree node
@@ -170,6 +180,8 @@ type treeImportOptionalCfg struct {
 	cellFormatFunc excel_import.CellFormatter
 	// the row filter function
 	rowFilterFunc excel_import.RowFilter
+	// enable format checker
+	enableFormatChecker bool
 }
 
 func genNodeKey(s []string, level int) string {
