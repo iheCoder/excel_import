@@ -43,6 +43,10 @@ type RawContent struct {
 	whole *RawWhole
 }
 
+func (r *RawContent) GetRow() int {
+	return r.Row
+}
+
 func (r *RawContent) GetModelTags() []*excel_import.ExcelImportTagAttr {
 	return r.whole.GetModelTags()
 }

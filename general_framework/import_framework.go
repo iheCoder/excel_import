@@ -213,11 +213,6 @@ func (k *ImportFramework) preHandleRawContent(contents [][]string) [][]string {
 		}
 	}
 
-	// filter the rows
-	if k.control.RowFilter != nil {
-		contents = util.FilterRows(contents, k.control.RowFilter)
-	}
-
 	// format the content
 	for i, content := range contents {
 		// if the content is less than the min column count, complete it with empty string
@@ -251,6 +246,11 @@ func (k *ImportFramework) parseRawWhole(contents [][]string) (*RawWhole, error) 
 
 	rawContents := make([]*RawContent, 0, len(contents))
 	for i, content := range contents {
+		// filter content
+		if k.control.RowFilter != nil && k.control.RowFilter(content) {
+			continue
+		}
+
 		// recognize the section type
 		sectionType := k.recognizer(content)
 
@@ -300,7 +300,7 @@ func (k *ImportFramework) checkContent(whole *RawWhole) error {
 
 		if err != nil || terr != nil {
 			checkFailed = true
-			if err = k.recorder.RecordCheckError(util.CombineErrors(i, terr, err)); err != nil {
+			if err = k.recorder.RecordCheckError(util.CombineErrors(rc.GetRow(), terr, err)); err != nil {
 				return err
 			}
 		}
@@ -385,8 +385,8 @@ func (k *ImportFramework) importSection(importer SectionImporter, content *RawCo
 
 	if err := importer.ImportSection(k.db, content); err != nil {
 		status = util.ProgressStatusFailed
-		fmt.Printf("import row %d section failed: %v\n", content.Row, err)
-		k.recorder.RecordImportError(util.CombineErrors(content.Row, err))
+		fmt.Printf("import row %d section failed: %v\n", content.GetRow(), err)
+		k.recorder.RecordImportError(util.CombineErrors(content.GetRow(), err))
 		return err
 	}
 
