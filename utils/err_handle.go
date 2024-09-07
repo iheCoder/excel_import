@@ -6,7 +6,8 @@ import (
 )
 
 const (
-	rowErrSep = ", "
+	rowErrSep  = ", "
+	errLineSep = "; \n"
 )
 
 type ErrBuilder struct {
@@ -33,7 +34,7 @@ func (eb *ErrBuilder) AddWithContent(s string, err error) {
 		return
 	}
 
-	eb.errs = append(eb.errs, errors.New(s+": "+err.Error()))
+	eb.errs = append(eb.errs, errors.New(fmt.Sprintf("\t内容 %s 错误: %s", s, err.Error())))
 }
 
 func (eb *ErrBuilder) AddHeader(header string) {
@@ -46,27 +47,27 @@ func (eb *ErrBuilder) Build() error {
 	}
 
 	errStr := eb.header
-	if errStr == "" {
-		errStr = "数据错误: "
-	}
 
 	for _, err := range eb.errs {
 		if err == nil {
 			continue
 		}
-		errStr += err.Error() + "; \n"
+		errStr += err.Error() + errLineSep
 	}
+
+	// remove last "; \n"
+	errStr = errStr[:len(errStr)-len(errLineSep)]
 
 	return errors.New(errStr)
 }
 
 func CombineErrors(row int, errs ...error) error {
-	errStr := fmt.Sprintf("第%d行数据错误: ", row+1)
+	errStr := fmt.Sprintf("第%d行数据错误 \n", row+1)
 	for _, err := range errs {
 		if err == nil {
 			continue
 		}
-		errStr += err.Error() + "; "
+		errStr += err.Error() + "\n"
 	}
 	return errors.New(errStr)
 }
@@ -81,13 +82,13 @@ func CombineRowsErrors(rows []int, errs ...error) error {
 		errStr += fmt.Sprintf("%d", row+1)
 		errStr += rowErrSep
 	}
-	errStr = errStr[:len(errStr)-len(rowErrSep)] + "行数据错误: "
+	errStr = errStr[:len(errStr)-len(rowErrSep)] + "行数据错误 \n"
 
 	for _, err := range errs {
 		if err == nil {
 			continue
 		}
-		errStr += err.Error() + "; "
+		errStr += err.Error() + "\n"
 	}
 
 	return errors.New(errStr)
