@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"excel_import"
+	"excel_import/features"
 	"excel_import/utils"
 	"fmt"
 	"golang.org/x/sync/errgroup"
@@ -27,6 +28,8 @@ type ImportFramework struct {
 	progressReporter *util.ProgressReporter
 	middlewares      []GeneralMiddleware
 	correctCheckers  []excel_import.CorrectnessChecker
+
+	featureMgr *features.FeatureMgr
 }
 
 func WithPostHandlers(postHandlers map[RowType]excel_import.PostHandler) OptionFunc {
@@ -95,6 +98,7 @@ func NewImporterFramework(db *gorm.DB, importers map[RowType]SectionImporter, re
 		recognizer:       recognizer,
 		control:          defaultImportControl,
 		progressReporter: util.NewProgressReporter(true),
+		featureMgr:       features.NewFeatureMgr(),
 	}
 
 	for _, option := range options {
@@ -103,6 +107,10 @@ func NewImporterFramework(db *gorm.DB, importers map[RowType]SectionImporter, re
 
 	if ki.control.EnableBatch {
 		ki.middlewares = append(ki.middlewares, newBatchSupportFeature(ki.control.BatchSize))
+	}
+
+	if ki.control.EnableTagFormatCheck {
+		ki.featureMgr.EnableTagFormatChecker()
 	}
 
 	return ki
@@ -250,7 +258,7 @@ func (k *ImportFramework) parseRawWhole(contents [][]string) (*RawWhole, error) 
 		rawContents = append(rawContents, &RawContent{
 			SectionType: sectionType,
 			Content:     content,
-			Model:       model,
+			info:        ModelInfo{Model: model},
 			Row:         i + k.control.StartRow,
 		})
 	}
@@ -265,7 +273,7 @@ func (k *ImportFramework) checkContent(whole *RawWhole) error {
 	var checkFailed bool
 	for i, rc := range whole.rawContents {
 		var terr error
-		if k.control.EnableTypeCheck {
+		if k.control.EnableTagFormatCheck {
 			if terr = k.checkTypeError(rc); terr != nil {
 				checkFailed = true
 			}

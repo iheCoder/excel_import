@@ -61,7 +61,7 @@ type Person struct {
 }
 
 func (di *simpleTestDataImporter) ImportSection(tx *gorm.DB, s *RawContent) error {
-	di.persons = append(di.persons, s.Model.(*Person))
+	di.persons = append(di.persons, s.GetModel().(*Person))
 
 	return nil
 }
@@ -100,7 +100,7 @@ type simpleTestDataWithTagImporter struct {
 }
 
 func (di *simpleTestDataWithTagImporter) ImportSection(tx *gorm.DB, s *RawContent) error {
-	di.persons = append(di.persons, s.Model.(*PersonWithTag))
+	di.persons = append(di.persons, s.GetModel().(*PersonWithTag))
 	return nil
 }
 
@@ -159,7 +159,7 @@ type simpleTestDataSupportMiddlewareImporter struct {
 }
 
 func (di *simpleTestDataSupportMiddlewareImporter) ImportSection(tx *gorm.DB, s *RawContent) error {
-	model := s.Model.(*calculateExample)
+	model := s.GetModel().(*calculateExample)
 	model.Sum = model.X + model.Y
 	return nil
 }
@@ -229,7 +229,7 @@ type simpleTestDataSupportSqlRunnerMiddlewareImporter struct {
 }
 
 func (di *simpleTestDataSupportSqlRunnerMiddlewareImporter) ImportSection(tx *gorm.DB, s *RawContent) error {
-	model := s.Model.(*computer)
+	model := s.GetModel().(*computer)
 	s.SetInsertModel(model)
 	return nil
 }
@@ -311,7 +311,7 @@ type correctCheckImporter struct {
 
 func (di *correctCheckImporter) ImportSection(tx *gorm.DB, s *RawContent) error {
 	// get model
-	model, ok := s.Model.(*resourceExcelModel)
+	model, ok := s.GetModel().(*resourceExcelModel)
 	if !ok {
 		return errors.New("model is not ResourceTestModel")
 	}

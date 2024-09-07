@@ -17,11 +17,28 @@ type RawWhole struct {
 }
 
 type RawContent struct {
-	Row         int
+	// the row number. keep the original row number
+	Row int
+	// the type of the row
 	SectionType RowType
-	Content     []string
-	Model       any
-	effect      importEffect
+	// the content of the row
+	Content []string
+	// deprecated
+	Model any
+	// the import effect.
+	// for example, the inserted model or updated model
+	effect importEffect
+	// the model info of the row
+	info ModelInfo
+}
+
+type ModelInfo struct {
+	Model    any
+	modelTag []*excel_import.ExcelImportTagAttr
+}
+
+func (r *RawContent) GetModel() any {
+	return r.info.Model
 }
 
 // SetInsertModel set the inserted model
@@ -71,8 +88,9 @@ type ImportControl struct {
 	StartRow int
 	// the end condition of the function
 	Ef excel_import.EndFunc
-	// enable type check
-	EnableTypeCheck bool
+	// enable tag format check
+	// must be set model factory
+	EnableTagFormatCheck bool
 	// enable import parallel
 	EnableParallel bool
 	// the max parallel number
