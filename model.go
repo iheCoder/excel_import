@@ -1,14 +1,14 @@
 package excel_import
 
 type CheckMode string
-type TreeFlag string
+type ContextRole string
 type FormatCheckFunc string
 
 const (
 	CheckModeOn = "on"
 
-	TreeFlagParentID TreeFlag = "parent_id"
-	TreeFlagKey      TreeFlag = "key"
+	ContextRoleParentID ContextRole = "parent_id"
+	ContextRoleKey      ContextRole = "key"
 
 	FormatCheckFuncInt      FormatCheckFunc = "int"
 	FormatCheckFuncFloat    FormatCheckFunc = "float"
@@ -32,11 +32,14 @@ type ExcelImportTagAttr struct {
 	// tagName: chk
 	Check CheckMode
 	// tree flag
-	// tagName: tree
-	Tree TreeFlag
+	// tagName: ctx
+	CtxRole ContextRole
 	// type check function
 	// tagName: fcf
 	FCF FormatCheckFunc
+	// the id to identify or link
+	// tagName: id
+	ID string
 }
 
 func CheckChkKeyMatch(cm CheckMode, key string) bool {

@@ -92,10 +92,12 @@ func parseTag(tag string) *excel_import.ExcelImportTagAttr {
 			}
 		case "chk":
 			tagAttr.Check = excel_import.CheckMode(value)
-		case "tree":
-			tagAttr.Tree = excel_import.TreeFlag(value)
+		case "ctx":
+			tagAttr.CtxRole = excel_import.ContextRole(value)
 		case "fcf":
 			tagAttr.FCF = excel_import.FormatCheckFunc(value)
+		case "id":
+			tagAttr.ID = value
 		}
 	}
 
