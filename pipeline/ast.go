@@ -14,14 +14,23 @@ type AstFile struct {
 }
 
 type StructInfo struct {
-	Name   string
-	Fields []Field
+	Name    string
+	Fields  []Field
+	VarName string
 }
 
 type Field struct {
 	Name    string
 	Type    string
 	Comment string
+	VarName string
+}
+
+type FuncDef struct {
+	SI       *StructInfo
+	FuncName string
+	Params   []Field
+	Results  []Field
 }
 
 // CreateImportDecl creates an import declaration with the given import paths.
@@ -51,14 +60,7 @@ func CreateImportDecl(imports []string) ast.Decl {
 // CreateStructDecl creates a struct declaration with the given struct info.
 func CreateStructDecl(info *StructInfo) ast.Decl {
 	// Create a field list with the given fields.
-	fields := make([]*ast.Field, len(info.Fields))
-	for i, field := range info.Fields {
-		fields[i] = &ast.Field{
-			Names: []*ast.Ident{ast.NewIdent(field.Name)},
-			Type:  ast.NewIdent(field.Type),
-			Doc:   &ast.CommentGroup{List: []*ast.Comment{{Text: fmt.Sprintf("// %s", field.Comment)}}},
-		}
-	}
+	fields := CreateFields(info.Fields)
 
 	// Create a type spec with the given struct name and fields.
 	return &ast.GenDecl{
@@ -72,4 +74,62 @@ func CreateStructDecl(info *StructInfo) ast.Decl {
 			},
 		},
 	}
+}
+
+// CreateFuncDecl creates a function declaration with the given function definition.
+func CreateFuncDecl(def *FuncDef) *ast.FuncDecl {
+	// If the struct info is not nil, create a receiver with the struct name.
+	var recv *ast.FieldList
+	if def.SI != nil {
+		recv = &ast.FieldList{
+			List: []*ast.Field{
+				{
+					Names: []*ast.Ident{ast.NewIdent(def.SI.VarName)},
+					Type:  ast.NewIdent(def.SI.Name),
+				},
+			},
+		}
+	}
+
+	// Create a field list with the given parameters.
+	params := make([]*ast.Field, len(def.Params))
+	for i, param := range def.Params {
+		params[i] = &ast.Field{
+			Names: []*ast.Ident{ast.NewIdent(param.VarName)},
+			Type:  ast.NewIdent(param.Type),
+		}
+	}
+
+	// Create a field list with the given results.
+	results := make([]*ast.Field, len(def.Results))
+	for i, result := range def.Results {
+		results[i] = &ast.Field{
+			Type: ast.NewIdent(result.Type),
+		}
+	}
+
+	// Create a function type with the given parameters and results.
+	ftype := &ast.FuncType{
+		Params:  &ast.FieldList{List: params},
+		Results: &ast.FieldList{List: results},
+	}
+
+	// Create a function declaration with the given function name, type, and body.
+	return &ast.FuncDecl{
+		Recv: recv,
+		Name: ast.NewIdent(def.FuncName),
+		Type: ftype,
+	}
+}
+
+func CreateFields(fields []Field) []*ast.Field {
+	astFields := make([]*ast.Field, len(fields))
+	for i, field := range fields {
+		astFields[i] = &ast.Field{
+			Names: []*ast.Ident{ast.NewIdent(field.Name)},
+			Type:  ast.NewIdent(field.Type),
+			Doc:   &ast.CommentGroup{List: []*ast.Comment{{Text: fmt.Sprintf("// %s", field.Comment)}}},
+		}
+	}
+	return astFields
 }
