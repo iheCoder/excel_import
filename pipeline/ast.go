@@ -8,6 +8,7 @@ import (
 
 const (
 	DefaultOKVarName = "ok"
+	NilToken         = "nil"
 )
 
 type AstGenerator struct {
@@ -265,5 +266,22 @@ func CreateFuncCallStmt(call *FuncCall) *ast.ExprStmt {
 	// Create an expression statement with the function call expression.
 	return &ast.ExprStmt{
 		X: fc,
+	}
+}
+
+// CreateIfErrIsNotNilStmt creates an if statement with the given error name and return err statements.
+func CreateIfErrIsNotNilStmt(errName string) *ast.IfStmt {
+	// Create an if statement with the given error name and return err statements.
+	return &ast.IfStmt{
+		Cond: &ast.BinaryExpr{
+			X:  ast.NewIdent(errName),
+			Op: token.NEQ,
+			Y:  ast.NewIdent(NilToken),
+		},
+		Body: &ast.BlockStmt{
+			List: []ast.Stmt{
+				CreateReturnErrStmt(errName),
+			},
+		},
 	}
 }
