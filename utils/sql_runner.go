@@ -180,6 +180,16 @@ func GenerateInsertSqlWithMap(tableName string, m map[string]any) string {
 	return query
 }
 
+func GenerateDeleteSql(tableName string, where map[string]any) string {
+	var whereStr []string
+	for k, v := range where {
+		whereStr = append(whereStr, fmt.Sprintf("%s = %s", k, formatValue(reflect.ValueOf(v))))
+	}
+
+	query := fmt.Sprintf("DELETE FROM %s WHERE %s;\n", tableName, strings.Join(whereStr, " AND "))
+	return query
+}
+
 func (r *SqlSentencesRunner) GenerateSqlUpdateSentences(updates, where map[string]any) error {
 	if r.sqlFile == nil {
 		err := r.initSqlFile()
@@ -190,6 +200,26 @@ func (r *SqlSentencesRunner) GenerateSqlUpdateSentences(updates, where map[strin
 
 	// generate update sql sentences
 	sql := GenerateUpdateSQLWithValues(r.tableName, updates, where)
+
+	// write to file
+	_, err := r.sqlFile.WriteString(sql)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *SqlSentencesRunner) GenerateSqlDeleteSentences(where map[string]any) error {
+	if r.sqlFile == nil {
+		err := r.initSqlFile()
+		if err != nil {
+			return err
+		}
+	}
+
+	// generate delete sql sentences
+	sql := GenerateDeleteSql(r.tableName, where)
 
 	// write to file
 	_, err := r.sqlFile.WriteString(sql)
