@@ -66,7 +66,11 @@ func CreateImportDecl(imports []string) ast.Decl {
 	for i, imp := range imports {
 		// If the import path is empty, create an empty import spec.
 		if len(imp) == 0 {
-			specs[i] = &ast.ImportSpec{}
+			specs[i] = &ast.ImportSpec{
+				Path: &ast.BasicLit{
+					Kind: token.STRING,
+				},
+			}
 			continue
 		}
 
