@@ -6,6 +6,10 @@ import (
 	"go/token"
 )
 
+const (
+	DefaultOKVarName = "ok"
+)
+
 type AstGenerator struct {
 }
 
@@ -132,4 +136,26 @@ func CreateFields(fields []Field) []*ast.Field {
 		}
 	}
 	return astFields
+}
+
+// CreateTypeAssertStmt creates a type assertion statement with the given sourceName, targetName, and typeName.
+func CreateTypeAssertStmt(sourceName, targetName, typeName string, body *ast.BlockStmt) *ast.IfStmt {
+	// Create a type assertion statement with the given source name, target name, and type name.
+	return &ast.IfStmt{
+		Init: &ast.AssignStmt{
+			Lhs: []ast.Expr{ast.NewIdent(targetName), ast.NewIdent(DefaultOKVarName)},
+			Tok: token.DEFINE,
+			Rhs: []ast.Expr{
+				&ast.TypeAssertExpr{
+					X:    ast.NewIdent(sourceName),
+					Type: ast.NewIdent(typeName),
+				},
+			},
+		},
+		Cond: &ast.UnaryExpr{
+			Op: token.NOT,
+			X:  ast.NewIdent(DefaultOKVarName),
+		},
+		Body: body,
+	}
 }
