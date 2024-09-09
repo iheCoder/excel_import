@@ -46,10 +46,17 @@ type FieldRelation struct {
 }
 
 type FuncDef struct {
-	SI       *StructInfo
+	Receiver *StructInfo
 	FuncName string
 	Params   []Field
 	Results  []Field
+}
+
+type FuncCall struct {
+	FuncName   string
+	Args       []Var
+	ReturnVars []Var
+	Receiver   *StructInfo
 }
 
 // CreateImportDecl creates an import declaration with the given import paths.
@@ -99,12 +106,12 @@ func CreateStructDecl(info *StructInfo) ast.Decl {
 func CreateFuncDecl(def *FuncDef) *ast.FuncDecl {
 	// If the struct info is not nil, create a receiver with the struct name.
 	var recv *ast.FieldList
-	if def.SI != nil {
+	if def.Receiver != nil {
 		recv = &ast.FieldList{
 			List: []*ast.Field{
 				{
-					Names: []*ast.Ident{ast.NewIdent(def.SI.VarName)},
-					Type:  ast.NewIdent(def.SI.Name),
+					Names: []*ast.Ident{ast.NewIdent(def.Receiver.VarName)},
+					Type:  ast.NewIdent(def.Receiver.Name),
 				},
 			},
 		}
@@ -227,5 +234,36 @@ func CreateStructValueSpec(relation StructFieldsRelation) *ast.ValueSpec {
 		Names:  []*ast.Ident{ast.NewIdent(relation.Info.VarName)},
 		Type:   ast.NewIdent(relation.Info.Name),
 		Values: []ast.Expr{cl},
+	}
+}
+
+// CreateFuncCallStmt creates a function call statement with the given function call.
+func CreateFuncCallStmt(call *FuncCall) *ast.ExprStmt {
+	// Create a function call expression with the given function name and arguments.
+	fc := &ast.CallExpr{
+		Fun: ast.NewIdent(call.FuncName),
+	}
+
+	// If the receiver is not nil, set the receiver to the function call expression.
+	if call.Receiver != nil {
+		fc.Fun = &ast.SelectorExpr{
+			X:   ast.NewIdent(call.Receiver.VarName),
+			Sel: ast.NewIdent(call.FuncName),
+		}
+	}
+
+	// Set the arguments to the function call expression.
+	for _, arg := range call.Args {
+		fc.Args = append(fc.Args, ast.NewIdent(arg.Name))
+	}
+
+	// Set the return variables to the function call expression.
+	for _, rv := range call.ReturnVars {
+		fc.Args = append(fc.Args, ast.NewIdent(rv.Name))
+	}
+
+	// Create an expression statement with the function call expression.
+	return &ast.ExprStmt{
+		X: fc,
 	}
 }
