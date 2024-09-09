@@ -169,3 +169,18 @@ func CreateReturnErrStmt(errName string) *ast.ReturnStmt {
 		Results: []ast.Expr{ast.NewIdent(errName)},
 	}
 }
+
+// CreateSwitchStmt creates a switch statement with the given selector and cases.
+func CreateSwitchStmt(selector string, cases []*ast.CaseClause) *ast.SwitchStmt {
+	list := make([]ast.Stmt, len(cases))
+	for i, c := range cases {
+		list[i] = c
+	}
+
+	return &ast.SwitchStmt{
+		Tag: ast.NewIdent(selector),
+		Body: &ast.BlockStmt{
+			List: list,
+		},
+	}
+}
