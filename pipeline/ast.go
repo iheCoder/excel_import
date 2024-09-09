@@ -28,6 +28,21 @@ type Field struct {
 	Type    string
 	Comment string
 	VarName string
+	Struct  *StructInfo
+}
+
+type Var struct {
+	Name string
+	Type string
+}
+
+type StructFieldsRelation struct {
+	Info   StructInfo
+	Fields []FieldRelation
+}
+
+type FieldRelation struct {
+	Source, Target Field
 }
 
 type FuncDef struct {
@@ -171,16 +186,46 @@ func CreateReturnErrStmt(errName string) *ast.ReturnStmt {
 }
 
 // CreateSwitchStmt creates a switch statement with the given selector and cases.
-func CreateSwitchStmt(selector string, cases []*ast.CaseClause) *ast.SwitchStmt {
+func CreateSwitchStmt(x, sel string, cases []*ast.CaseClause) *ast.SwitchStmt {
 	list := make([]ast.Stmt, len(cases))
 	for i, c := range cases {
 		list[i] = c
 	}
 
 	return &ast.SwitchStmt{
-		Tag: ast.NewIdent(selector),
+		Tag: &ast.SelectorExpr{
+			X:   ast.NewIdent(x),
+			Sel: ast.NewIdent(sel),
+		},
 		Body: &ast.BlockStmt{
 			List: list,
 		},
+	}
+}
+
+// CreateStructValueSpec creates a value specification with the given struct fields relation.
+func CreateStructValueSpec(relation StructFieldsRelation) *ast.ValueSpec {
+	// Create a composite literal with the given struct name.
+	cl := &ast.CompositeLit{
+		Type: ast.NewIdent(relation.Info.Name),
+	}
+
+	// Create a key-value expression with the given source and target fields.
+	elts := make([]ast.Expr, len(relation.Fields))
+	for i, f := range relation.Fields {
+		elts[i] = &ast.KeyValueExpr{
+			Key:   ast.NewIdent(f.Target.Name),
+			Value: &ast.SelectorExpr{X: ast.NewIdent(f.Source.Struct.VarName), Sel: ast.NewIdent(f.Source.Name)},
+		}
+	}
+
+	// Set the elements to the composite literal.
+	cl.Elts = elts
+
+	// Create a value specification with the composite literal.
+	return &ast.ValueSpec{
+		Names:  []*ast.Ident{ast.NewIdent(relation.Info.VarName)},
+		Type:   ast.NewIdent(relation.Info.Name),
+		Values: []ast.Expr{cl},
 	}
 }
