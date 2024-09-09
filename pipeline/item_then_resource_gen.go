@@ -25,3 +25,21 @@ func (i *ItemResourceAstGenerator) AddStructDecl() {
 		Name: structName,
 	}))
 }
+
+func (i *ItemResourceAstGenerator) AddNewFuncStructDecl() {
+	// create return statement
+	ret := CreateNewStructReturnStmt(&StructInfo{
+		Name: structName,
+	})
+
+	// create new func declaration
+	newFuncDelc := CreateFuncDecl(&FuncDef{
+		FuncName: "New" + structName,
+		Results:  []Field{{Type: "*" + structName}},
+	})
+
+	// add return statement to the new func declaration
+	newFuncDelc.Body.List = append(newFuncDelc.Body.List, ret)
+
+	i.f.Decls = append(i.f.Decls, newFuncDelc)
+}

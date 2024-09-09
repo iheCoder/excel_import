@@ -295,3 +295,28 @@ func CreateIfErrIsNotNilStmt(errName string) *ast.IfStmt {
 		},
 	}
 }
+
+// CreateNewStructReturnStmt creates a return statement with the given struct info.
+func CreateNewStructReturnStmt(info *StructInfo) *ast.ReturnStmt {
+	// Create a composite literal with the given struct name.
+	cl := &ast.CompositeLit{
+		Type: ast.NewIdent(info.Name),
+	}
+
+	// Create a key-value expression with the given struct fields.
+	elts := make([]ast.Expr, len(info.Fields))
+	for i, f := range info.Fields {
+		elts[i] = &ast.KeyValueExpr{
+			Key:   ast.NewIdent(f.Name),
+			Value: ast.NewIdent(f.VarName),
+		}
+	}
+
+	// Set the elements to the composite literal.
+	cl.Elts = elts
+
+	// Create a return statement with the composite literal.
+	return &ast.ReturnStmt{
+		Results: []ast.Expr{cl},
+	}
+}
