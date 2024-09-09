@@ -139,7 +139,7 @@ func CreateFields(fields []Field) []*ast.Field {
 }
 
 // CreateTypeAssertStmt creates a type assertion statement with the given sourceName, targetName, and typeName.
-func CreateTypeAssertStmt(sourceName, targetName, typeName string, body *ast.BlockStmt) *ast.IfStmt {
+func CreateTypeAssertStmt(sourceName, targetName, typeName string, stmt []ast.Stmt) *ast.IfStmt {
 	// Create a type assertion statement with the given source name, target name, and type name.
 	return &ast.IfStmt{
 		Init: &ast.AssignStmt{
@@ -156,6 +156,16 @@ func CreateTypeAssertStmt(sourceName, targetName, typeName string, body *ast.Blo
 			Op: token.NOT,
 			X:  ast.NewIdent(DefaultOKVarName),
 		},
-		Body: body,
+		Body: &ast.BlockStmt{
+			List: stmt,
+		},
+	}
+}
+
+// CreateReturnErrStmt creates a return statement with the given error name.
+func CreateReturnErrStmt(errName string) *ast.ReturnStmt {
+	// Create a return statement with the given error name.
+	return &ast.ReturnStmt{
+		Results: []ast.Expr{ast.NewIdent(errName)},
 	}
 }
