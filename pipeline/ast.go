@@ -159,7 +159,13 @@ func CreateFields(fields []Field) []*ast.Field {
 		astFields[i] = &ast.Field{
 			Names: []*ast.Ident{ast.NewIdent(field.Name)},
 			Type:  ast.NewIdent(field.Type),
-			Doc:   &ast.CommentGroup{List: []*ast.Comment{{Text: fmt.Sprintf("// %s", field.Comment)}}},
+			Comment: &ast.CommentGroup{
+				List: []*ast.Comment{
+					{
+						Text: fmt.Sprintf("\t//\t%s", field.Comment),
+					},
+				},
+			},
 		}
 	}
 	return astFields

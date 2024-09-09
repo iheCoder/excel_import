@@ -51,3 +51,52 @@ func declToString(decl ast.Decl) string {
 	// 返回 buffer 中的内容作为字符串
 	return buf.String()
 }
+
+func TestCreateStructDecl(t *testing.T) {
+	type testData struct {
+		name   string
+		fields []Field
+		want   string
+	}
+
+	tests := []testData{
+		{
+			name: "test",
+			fields: []Field{
+				{
+					Name:    "ID",
+					Type:    "int",
+					Comment: "id",
+				},
+				{
+					Name:    "Name",
+					Type:    "string",
+					Comment: "name",
+				},
+			},
+			want: "type test struct {\n\tID\tint\t//\tid\n\tName\tstring\t//\tname\n}",
+		},
+		{
+			name: "test",
+			fields: []Field{
+				{
+					Name:    "A",
+					Type:    "int",
+					Comment: "你好",
+				},
+			},
+			want: "type test struct {\n\tA int\t//\t你好\n}",
+		},
+	}
+
+	for _, test := range tests {
+		decl := CreateStructDecl(&StructInfo{
+			Name:   test.name,
+			Fields: test.fields,
+		})
+		got := declToString(decl)
+		if got != test.want {
+			t.Errorf("CreateStructDecl(%s, %v) =\n %v\n, want\n %v", test.name, test.fields, got, test.want)
+		}
+	}
+}
