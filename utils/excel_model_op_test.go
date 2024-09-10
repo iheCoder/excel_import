@@ -1,14 +1,15 @@
 package util
 
 import (
+	"excel_import"
 	"fmt"
 	"testing"
 )
 
 func TestFmt(t *testing.T) {
-	info := &StructInfo{
+	info := &excel_import.StructInfo{
 		Name: "test",
-		Fields: []Field{
+		Fields: []excel_import.Field{
 			{
 				Name:    "ID",
 				Type:    "int",
@@ -26,15 +27,15 @@ func TestFmt(t *testing.T) {
 
 func TestStructInfo_Fmt(t *testing.T) {
 	type testData struct {
-		info     *StructInfo
+		info     *excel_import.StructInfo
 		expected string
 	}
 
 	tests := []testData{
 		{
-			info: &StructInfo{
+			info: &excel_import.StructInfo{
 				Name: "test",
-				Fields: []Field{
+				Fields: []excel_import.Field{
 					{
 						Name:    "ID",
 						Type:    "int",
@@ -50,9 +51,9 @@ func TestStructInfo_Fmt(t *testing.T) {
 			expected: "type test struct {\n\tID int // id\n\tName string // name\n}\n",
 		},
 		{
-			info: &StructInfo{
+			info: &excel_import.StructInfo{
 				Name: "test",
-				Fields: []Field{
+				Fields: []excel_import.Field{
 					{
 						Name:    "A",
 						Type:    "int",

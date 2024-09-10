@@ -1,5 +1,10 @@
 package excel_import
 
+import (
+	"fmt"
+	"strings"
+)
+
 type CheckMode string
 type ContextRole string
 type FormatCheckFunc string
@@ -74,4 +79,32 @@ type GormTag struct {
 	// The type of the database.
 	// tagName: type
 	Type string
+}
+
+type Field struct {
+	Name    string
+	Type    string
+	Comment string
+}
+
+type StructInfo struct {
+	Name   string
+	Fields []Field
+}
+
+// String implements the fmt.Stringer interface for StructInfo.
+func (s StructInfo) String() string {
+	var sb strings.Builder
+	// Write the struct definition line
+	sb.WriteString(fmt.Sprintf("type %s struct {\n", s.Name))
+
+	// Write each field line with type and comment
+	for _, field := range s.Fields {
+		// Use format: "\tName Type // Comment\n"
+		sb.WriteString(fmt.Sprintf("\t%s %s // %s\n", field.Name, field.Type, field.Comment))
+	}
+
+	// Close the struct definition
+	sb.WriteString("}\n")
+	return sb.String()
 }

@@ -1,21 +1,11 @@
 package util
 
 import (
+	"excel_import"
 	"fmt"
 	"strconv"
 	"strings"
 )
-
-type Field struct {
-	Name    string
-	Type    string
-	Comment string
-}
-
-type StructInfo struct {
-	Name   string
-	Fields []Field
-}
 
 type typeCode struct {
 	Type string
@@ -91,11 +81,11 @@ func GenerateStructString(structName string, fieldComment []string, contents [][
 		return ""
 	}
 
-	info := StructInfo{
+	info := excel_import.StructInfo{
 		Name: structName,
 	}
 	for i, v := range contents {
-		info.Fields = append(info.Fields, Field{
+		info.Fields = append(info.Fields, excel_import.Field{
 			Name:    getExcelColIndex(i),
 			Type:    detectType(v),
 			Comment: fmt.Sprintf("%s\t%d", fieldComment[i], i),
@@ -207,21 +197,4 @@ func detectType(values []string) string {
 	}
 
 	return ensureType()
-}
-
-// String implements the fmt.Stringer interface for StructInfo.
-func (s StructInfo) String() string {
-	var sb strings.Builder
-	// Write the struct definition line
-	sb.WriteString(fmt.Sprintf("type %s struct {\n", s.Name))
-
-	// Write each field line with type and comment
-	for _, field := range s.Fields {
-		// Use format: "\tName Type // Comment\n"
-		sb.WriteString(fmt.Sprintf("\t%s %s // %s\n", field.Name, field.Type, field.Comment))
-	}
-
-	// Close the struct definition
-	sb.WriteString("}\n")
-	return sb.String()
 }

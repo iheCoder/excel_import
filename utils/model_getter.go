@@ -88,3 +88,28 @@ func CompareModel(real, expected any, attr []*excel_import.ExcelImportTagAttr, k
 
 	return nil
 }
+
+// ParseStructInfo parse struct info
+func ParseStructInfo(m any) *excel_import.StructInfo {
+	if m == nil {
+		return nil
+	}
+	v := reflect.ValueOf(m)
+	if v.Kind() != reflect.Ptr || v.Elem().Kind() != reflect.Struct {
+		return nil
+	}
+	v = v.Elem()
+
+	info := &excel_import.StructInfo{}
+	info.Name = v.Type().Name()
+
+	for i := 0; i < v.NumField(); i++ {
+		field := v.Field(i)
+		info.Fields = append(info.Fields, excel_import.Field{
+			Name: v.Type().Field(i).Name,
+			Type: field.Type().String(),
+		})
+	}
+
+	return info
+}
