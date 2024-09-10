@@ -1,5 +1,18 @@
 package pipeline
 
+import (
+	"excel_import"
+	util "excel_import/utils"
+)
+
+var (
+	defaultRelationAdapter = RelationAdapter{
+		f: func(from any) any {
+			return from
+		},
+	}
+)
+
 // FieldNode is a node in the graph
 type FieldNode struct {
 	StructName string
@@ -48,4 +61,41 @@ func (mg *ModelGraph) GetOneEdge(from FieldNode) (FieldNode, RelationAdapter, bo
 	}
 
 	return FieldNode{}, RelationAdapter{}, false
+}
+
+func NewModelGraphOneToMany(one any, many []any) *ModelGraph {
+	// parse one, many tags
+	oneTags := util.ParseTag(one)
+	n := len(many)
+	manyTags := make([][]*excel_import.ExcelImportTagAttr, 0, n)
+	for _, m := range many {
+		manyTags = append(manyTags, util.ParseTag(m))
+	}
+
+	// parse one, many struct info
+	oneInfo := util.ParseStructInfo(one)
+	manyInfos := make([]*excel_import.StructInfo, 0, n)
+	for _, m := range many {
+		manyInfos = append(manyInfos, util.ParseStructInfo(m))
+	}
+
+	// map one tag and related field
+	m := make(map[string]excel_import.Field)
+	for i, tag := range oneTags {
+		m[tag.ID] = oneInfo.Fields[i]
+	}
+
+	// match same tag id, add to graph
+	graph := NewModelGraph()
+	for i, mTags := range manyTags {
+		for j, mTag := range mTags {
+			if field, ok := m[mTag.ID]; ok {
+				oneField := FieldNode{StructName: oneInfo.Name, FieldName: field.Name}
+				manyField := FieldNode{StructName: manyInfos[i].Name, FieldName: manyInfos[i].Fields[j].Name}
+				graph.AddEdge(manyField, oneField, defaultRelationAdapter)
+			}
+		}
+	}
+
+	return graph
 }
