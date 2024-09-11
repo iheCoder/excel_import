@@ -54,6 +54,18 @@ func (mg *ModelGraph) GetEdge(from FieldNode) map[FieldNode]RelationAdapter {
 	return mg.Edges[from]
 }
 
+// GetStructEdges gets all edges from a struct
+func (mg *ModelGraph) GetStructEdges(structName string) map[FieldNode]RelationAdapter {
+	edges := make(map[FieldNode]RelationAdapter)
+	for from, tos := range mg.Edges {
+		if from.StructName == structName {
+			edges[from] = tos[from]
+		}
+	}
+
+	return edges
+}
+
 // GetOneEdge gets one edge from a node
 func (mg *ModelGraph) GetOneEdge(from FieldNode) (FieldNode, RelationAdapter, bool) {
 	for to, adapter := range mg.Edges[from] {
@@ -92,7 +104,7 @@ func NewModelGraphOneToMany(one any, many []any) *ModelGraph {
 			if field, ok := m[mTag.ID]; ok {
 				oneField := FieldNode{StructName: oneInfo.Name, FieldName: field.Name}
 				manyField := FieldNode{StructName: manyInfos[i].Name, FieldName: manyInfos[i].Fields[j].Name}
-				graph.AddEdge(manyField, oneField, defaultRelationAdapter)
+				graph.AddEdge(oneField, manyField, defaultRelationAdapter)
 			}
 		}
 	}

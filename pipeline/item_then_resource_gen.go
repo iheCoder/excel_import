@@ -46,11 +46,39 @@ func (i *ItemResourceAstGenerator) AddNewFuncStructDecl() {
 	i.f.Decls = append(i.f.Decls, newFuncDelc)
 }
 
-func (i *ItemResourceAstGenerator) createTypeAssertStmt(sourceName, targetName, typeName string) *ast.IfStmt {
+func (i *ItemResourceAstGenerator) createTypeAssertStmt(source, target Var) *ast.IfStmt {
 	// create return error statement
 	retErr := CreateReturnErrStmt("errors.New(\"type assertion failed\")")
 
 	// create type assertion statement
-	typeAssertStmt := CreateTypeAssertStmt(sourceName, targetName, typeName, []ast.Stmt{retErr})
+	typeAssertStmt := CreateTypeAssertStmt(source, target, []ast.Stmt{retErr})
 	return typeAssertStmt
+}
+
+func TransferStructFieldsRelation(info *StructInfo, graph *ModelGraph) StructFieldsRelation {
+	// transfer struct field relation
+	fieldsRelation := make([]FieldRelation, 0, len(info.Fields))
+	for _, field := range info.Fields {
+		// get edge from the field node
+		to, _, ok := graph.GetOneEdge(FieldNode{
+			StructName: info.Name,
+			FieldName:  field.Name,
+		})
+		if !ok {
+			continue
+		}
+
+		// create field relation
+		fieldsRelation = append(fieldsRelation, FieldRelation{
+			ReceptorFieldName: field.Name,
+			// TODO: replace into var name
+			ProviderVarName:   to.StructName,
+			ProviderFieldName: to.FieldName,
+		})
+	}
+
+	return StructFieldsRelation{
+		Info:   *info,
+		Fields: fieldsRelation,
+	}
 }
