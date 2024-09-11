@@ -69,6 +69,28 @@ func (i *ItemResourceAstGenerator) createStructAssignStmt(receptor StructInfo) *
 	return assignStmt
 }
 
+func (i *ItemResourceAstGenerator) createGormDBCreateIfStmt(db, model Var) *ast.IfStmt {
+	// create tx.Create(&model) statement
+	fc := &FuncCall{
+		FuncName: "Create",
+		Args:     []Var{model},
+		ReturnVars: []Var{
+			{
+				Name: "err",
+				Type: "error",
+			},
+		},
+	}
+	fcs := CreateFuncCallStmt(fc)
+
+	// create if err != nil statement
+	ifStmt := CreateIfErrIsNotNilStmt("err")
+
+	// add tx.Create(&model) statement to the if statement
+	ifStmt.Body.List = append(ifStmt.Body.List, fcs)
+	return ifStmt
+}
+
 func TransferStructFieldsRelation(info *StructInfo, graph *ModelGraph) StructFieldsRelation {
 	// transfer struct field relation
 	fieldsRelation := make([]FieldRelation, 0, len(info.Fields))
