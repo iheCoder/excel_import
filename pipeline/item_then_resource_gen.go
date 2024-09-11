@@ -16,6 +16,8 @@ var (
 
 type ItemResourceAstGenerator struct {
 	f *ast.File
+	// struct name and its fields relation
+	relations map[string]StructFieldsRelation
 }
 
 func (i *ItemResourceAstGenerator) AddImportDecl() {
@@ -53,6 +55,18 @@ func (i *ItemResourceAstGenerator) createTypeAssertStmt(source, target Var) *ast
 	// create type assertion statement
 	typeAssertStmt := CreateTypeAssertStmt(source, target, []ast.Stmt{retErr})
 	return typeAssertStmt
+}
+
+func (i *ItemResourceAstGenerator) createStructAssignStmt(receptor StructInfo) *ast.AssignStmt {
+	// get struct fields relation
+	relation, ok := i.relations[receptor.Name]
+	if !ok {
+		return nil
+	}
+
+	// create struct assign statement
+	assignStmt := CreateStructAssignStmt(relation)
+	return assignStmt
 }
 
 func TransferStructFieldsRelation(info *StructInfo, graph *ModelGraph) StructFieldsRelation {
