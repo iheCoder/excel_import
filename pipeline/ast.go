@@ -43,7 +43,9 @@ type StructFieldsRelation struct {
 }
 
 type FieldRelation struct {
-	Source, Target Field
+	ReceptorFieldName string
+	ProviderVarName   string
+	ProviderFieldName string
 }
 
 type FuncDef struct {
@@ -172,16 +174,16 @@ func CreateFields(fields []Field) []*ast.Field {
 }
 
 // CreateTypeAssertStmt creates a type assertion statement with the given sourceName, targetName, and typeName.
-func CreateTypeAssertStmt(sourceName, targetName, typeName string, stmt []ast.Stmt) *ast.IfStmt {
+func CreateTypeAssertStmt(source, target Var, stmt []ast.Stmt) *ast.IfStmt {
 	// Create a type assertion statement with the given source name, target name, and type name.
 	return &ast.IfStmt{
 		Init: &ast.AssignStmt{
-			Lhs: []ast.Expr{ast.NewIdent(targetName), ast.NewIdent(DefaultOKVarName)},
+			Lhs: []ast.Expr{ast.NewIdent(target.Name), ast.NewIdent(DefaultOKVarName)},
 			Tok: token.DEFINE,
 			Rhs: []ast.Expr{
 				&ast.TypeAssertExpr{
-					X:    ast.NewIdent(sourceName),
-					Type: ast.NewIdent(typeName),
+					X:    ast.NewIdent(source.Name),
+					Type: ast.NewIdent(target.Type),
 				},
 			},
 		},
@@ -221,8 +223,8 @@ func CreateSwitchStmt(x, sel string, cases []*ast.CaseClause) *ast.SwitchStmt {
 	}
 }
 
-// CreateStructValueSpec creates a value specification with the given struct fields relation.
-func CreateStructValueSpec(relation StructFieldsRelation) *ast.ValueSpec {
+// CreateStructAssignStmt creates a value specification with the given struct fields relation.
+func CreateStructAssignStmt(relation StructFieldsRelation) *ast.AssignStmt {
 	// Create a composite literal with the given struct name.
 	cl := &ast.CompositeLit{
 		Type: ast.NewIdent(relation.Info.Name),
@@ -232,20 +234,22 @@ func CreateStructValueSpec(relation StructFieldsRelation) *ast.ValueSpec {
 	elts := make([]ast.Expr, len(relation.Fields))
 	for i, f := range relation.Fields {
 		elts[i] = &ast.KeyValueExpr{
-			Key:   ast.NewIdent(f.Target.Name),
-			Value: &ast.SelectorExpr{X: ast.NewIdent(f.Source.Struct.VarName), Sel: ast.NewIdent(f.Source.Name)},
+			Key:   ast.NewIdent(f.ReceptorFieldName),
+			Value: &ast.SelectorExpr{X: ast.NewIdent(f.ProviderVarName), Sel: ast.NewIdent(f.ProviderFieldName)},
 		}
 	}
 
 	// Set the elements to the composite literal.
 	cl.Elts = elts
 
-	// Create a value specification with the composite literal.
-	return &ast.ValueSpec{
-		Names:  []*ast.Ident{ast.NewIdent(relation.Info.VarName)},
-		Type:   ast.NewIdent(relation.Info.Name),
-		Values: []ast.Expr{cl},
+	// Create an assignment statement to initialize the variable with the composite literal.
+	assignStmt := &ast.AssignStmt{
+		Lhs: []ast.Expr{ast.NewIdent(relation.Info.VarName)}, // Variable name e.g., receptor
+		Tok: token.DEFINE,                                    // := operator
+		Rhs: []ast.Expr{cl},
 	}
+
+	return assignStmt
 }
 
 // CreateFuncCallStmt creates a function call statement with the given function call.

@@ -52,6 +52,25 @@ func declToString(decl ast.Decl) string {
 	return buf.String()
 }
 
+func valueSpecToString(vs *ast.ValueSpec) string {
+	var buf bytes.Buffer
+	err := printer.Fprint(&buf, token.NewFileSet(), vs)
+	if err != nil {
+		log.Fatalf("Error printing AST: %v", err)
+	}
+	return buf.String()
+}
+
+func assignStmtToString(as *ast.AssignStmt) string {
+	var buf bytes.Buffer
+	err := printer.Fprint(&buf, token.NewFileSet(), as)
+	if err != nil {
+		log.Fatalf("Error printing AST: %v", err)
+	}
+
+	return buf.String()
+}
+
 func TestCreateStructDecl(t *testing.T) {
 	type testData struct {
 		name   string
@@ -97,6 +116,61 @@ func TestCreateStructDecl(t *testing.T) {
 		got := declToString(decl)
 		if got != test.want {
 			t.Errorf("CreateStructDecl(%s, %v) =\n %v\n, want\n %v", test.name, test.fields, got, test.want)
+		}
+	}
+}
+
+func TestCreateStructAssignStmt(t *testing.T) {
+	type testData struct {
+		relation StructFieldsRelation
+		expected string
+	}
+
+	tests := []testData{
+		{
+			relation: StructFieldsRelation{
+				Info: StructInfo{
+					Name:    "TestReceptor",
+					VarName: "receptor",
+				},
+				Fields: []FieldRelation{
+					{
+						ReceptorFieldName: "ID",
+						ProviderVarName:   "provider",
+						ProviderFieldName: "ID",
+					},
+				},
+			},
+			expected: "receptor := TestReceptor{ID: provider.ID}",
+		},
+		{
+			relation: StructFieldsRelation{
+				Info: StructInfo{
+					Name:    "TestReceptor",
+					VarName: "receptor",
+				},
+				Fields: []FieldRelation{
+					{
+						ReceptorFieldName: "ID",
+						ProviderVarName:   "provider",
+						ProviderFieldName: "ID",
+					},
+					{
+						ReceptorFieldName: "Name",
+						ProviderVarName:   "provider",
+						ProviderFieldName: "Name",
+					},
+				},
+			},
+			expected: "receptor := TestReceptor{ID: provider.ID, Name: provider.Name}",
+		},
+	}
+
+	for _, test := range tests {
+		spec := CreateStructAssignStmt(test.relation)
+		got := assignStmtToString(spec)
+		if got != test.expected {
+			t.Errorf("CreateStructAssignStmt(%v) =\n %v\n, want\n %v", test.relation, got, test.expected)
 		}
 	}
 }
