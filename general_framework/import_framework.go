@@ -90,6 +90,12 @@ func WithRowFilter(filter excel_import.RowFilter) OptionFunc {
 	}
 }
 
+func WithEndFunc(ef excel_import.EndFunc) OptionFunc {
+	return func(framework *ImportFramework) {
+		framework.control.Ef = ef
+	}
+}
+
 func NewImporterFramework(db *gorm.DB, importers map[RowType]SectionImporter, recognizer SectionRecognizer, options ...OptionFunc) *ImportFramework {
 	ki := &ImportFramework{
 		db:               db,
