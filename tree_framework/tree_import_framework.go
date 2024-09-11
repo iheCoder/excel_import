@@ -356,8 +356,9 @@ func (t *TreeImportFramework) parseRawWhole(content [][]string) (*rawCellWhole, 
 		models:         models,
 		modelAttrs:     tags,
 	}
+
 	// fill the rawModel into the leaf tree node
-	t.fillModelIntoLeafNode(root, models, whole)
+	t.fillModelIntoNodes(root, models, whole)
 
 	return whole, nil
 }
@@ -375,7 +376,7 @@ func (t *TreeImportFramework) calculateTotalNodeCount(root *TreeNode) int {
 	return count
 }
 
-func (t *TreeImportFramework) fillModelIntoLeafNode(node *TreeNode, models []any, whole *rawCellWhole) {
+func (t *TreeImportFramework) fillModelIntoNodes(node *TreeNode, models []any, whole *rawCellWhole) {
 	if node == nil {
 		return
 	}
@@ -384,20 +385,17 @@ func (t *TreeImportFramework) fillModelIntoLeafNode(node *TreeNode, models []any
 	node.whole = whole
 
 	// fill the model into the leaf node
-	if node.CheckIsLeaf() {
-		for _, nodeItem := range node.extra.items {
-			if nodeItem.row < t.ocfg.startRow || nodeItem.row >= t.ocfg.startRow+len(models) {
-				fmt.Printf("row %d out of range\n", nodeItem.row)
-				continue
-			}
-
-			nodeItem.item = models[nodeItem.row-t.ocfg.startRow]
+	for _, nodeItem := range node.extra.items {
+		if nodeItem.row < t.ocfg.startRow || nodeItem.row >= t.ocfg.startRow+len(models) {
+			fmt.Printf("row %d out of range\n", nodeItem.row)
+			continue
 		}
-		return
+
+		nodeItem.item = models[nodeItem.row-t.ocfg.startRow]
 	}
 
 	for _, child := range node.children {
-		t.fillModelIntoLeafNode(child, models, whole)
+		t.fillModelIntoNodes(child, models, whole)
 	}
 }
 
@@ -473,7 +471,7 @@ func (t *TreeImportFramework) constructTree(rcContents [][]string) (*TreeNode, e
 	contents = contents[:t.cfg.TreeBoundary+1]
 
 	// construct the tree
-	root := &TreeNode{}
+	root := constructLevelNode("", nil, 0)
 	parent := root
 	for level, i := range t.cfg.LevelOrder {
 		for j, s := range contents[i] {

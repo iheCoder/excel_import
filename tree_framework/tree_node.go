@@ -153,7 +153,11 @@ func constructLevelNode(s string, parent *TreeNode, level int) *TreeNode {
 			items: make([]*TreeNodeItem, 0),
 		},
 	}
-	parent.children = append(parent.children, node)
+
+	if parent != nil {
+		parent.children = append(parent.children, node)
+	}
+
 	return node
 }
 
