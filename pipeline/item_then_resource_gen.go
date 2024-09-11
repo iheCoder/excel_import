@@ -1,6 +1,8 @@
 package pipeline
 
-import "go/ast"
+import (
+	"go/ast"
+)
 
 var (
 	importsStmt = []string{
@@ -42,4 +44,13 @@ func (i *ItemResourceAstGenerator) AddNewFuncStructDecl() {
 	newFuncDelc.Body.List = append(newFuncDelc.Body.List, ret)
 
 	i.f.Decls = append(i.f.Decls, newFuncDelc)
+}
+
+func (i *ItemResourceAstGenerator) createTypeAssertStmt(sourceName, targetName, typeName string) *ast.IfStmt {
+	// create return error statement
+	retErr := CreateReturnErrStmt("errors.New(\"type assertion failed\")")
+
+	// create type assertion statement
+	typeAssertStmt := CreateTypeAssertStmt(sourceName, targetName, typeName, []ast.Stmt{retErr})
+	return typeAssertStmt
 }
