@@ -105,6 +105,7 @@ func NewModelGraphOneToMany(one any, many []any) *ModelGraph {
 				oneField := FieldNode{StructName: oneInfo.Name, FieldName: field.Name}
 				manyField := FieldNode{StructName: manyInfos[i].Name, FieldName: manyInfos[i].Fields[j].Name}
 				graph.AddEdge(oneField, manyField, defaultRelationAdapter)
+				graph.AddEdge(manyField, oneField, defaultRelationAdapter)
 			}
 		}
 	}
