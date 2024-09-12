@@ -74,6 +74,7 @@ func (v *VarMgr) GenerateVarNameInScope(typeName, scopeKey string) (varName stri
 	if !v.checkVarConflictInScope(varName, s) {
 		return varName, true
 	}
+	firstVarName := varName
 	tries++
 
 	// then try to generate the var name by the lower case of the first word of the type name
@@ -90,13 +91,15 @@ func (v *VarMgr) GenerateVarNameInScope(typeName, scopeKey string) (varName stri
 	}
 	tries++
 
-	// if the above two methods failed, generate a random name
+	// if the above three methods failed, generate a suffix var name
+	suffix := 'A'
 	for tries < maxGenTries {
-		varName = generateRandomVarName(typeName)
+		varName = firstVarName + string(suffix)
 		if !v.checkVarConflictInScope(varName, s) {
 			return varName, true
 		}
 		tries++
+		suffix++
 	}
 
 	return "", false
@@ -243,9 +246,4 @@ func splitCamelCase(input string) []string {
 func checkKeywordConflict(varName string) bool {
 	_, ok := goKeywords[varName]
 	return ok
-}
-
-func generateRandomVarName(varType string) string {
-	// TODO implements
-	return ""
 }
