@@ -5,6 +5,17 @@ import (
 	"unicode"
 )
 
+// Keywords contains Go's reserved keywords that cannot be used as variable names.
+var (
+	goKeywords = map[string]struct{}{
+		"break": {}, "default": {}, "func": {}, "interface": {}, "select": {},
+		"case": {}, "defer": {}, "go": {}, "map": {}, "struct": {},
+		"chan": {}, "else": {}, "goto": {}, "package": {}, "switch": {},
+		"const": {}, "fallthrough": {}, "if": {}, "range": {}, "type": {},
+		"continue": {}, "for": {}, "import": {}, "return": {}, "var": {},
+	}
+)
+
 type VarMgr struct {
 }
 
@@ -49,4 +60,9 @@ func splitCamelCase(input string) []string {
 	}
 	words = append(words, input[lastPos:])
 	return words
+}
+
+func checkKeywordConflict(varName string) bool {
+	_, ok := goKeywords[varName]
+	return ok
 }
