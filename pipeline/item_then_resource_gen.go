@@ -93,10 +93,7 @@ func CreateGormDBCreateBlockStmt(db, model Var) []ast.Stmt {
 	return []ast.Stmt{fcs, ifStmt}
 }
 
-func CreateCreateModelCaseClause(dbVar Var, condVars []Var, relation *StructFieldsRelation) *ast.CaseClause {
-	modelVar := Var{
-		Name: "model",
-	}
+func CreateCreateModelCaseClause(dbVar, modelVar Var, condVars []Var, relation *StructFieldsRelation) *ast.CaseClause {
 	// create struct assign statement
 	relation.Info.VarName = modelVar.Name
 	assignStmt := CreateStructAssignStmt(relation)

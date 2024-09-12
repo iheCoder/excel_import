@@ -55,7 +55,10 @@ func TestCreateCreateModelCaseClause(t *testing.T) {
 			},
 		},
 	}
-	stmt := CreateCreateModelCaseClause(dbVar, condVars, relation)
+	modelVar := Var{
+		Name: "model",
+	}
+	stmt := CreateCreateModelCaseClause(dbVar, modelVar, condVars, relation)
 	want := "case 1:\n\tmodel := Genshin{Hero: excelModel.Hero}\n\terr := tx.Create(model)\n\tif err != nil {\n\t\treturn err\n\t}"
 	got := stmtToString(stmt)
 	if got != want {
