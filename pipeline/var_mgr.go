@@ -21,6 +21,10 @@ type VarMgr struct {
 
 // GenerateVarNameByUpperCase generates a string by the upper case of the input string.
 func GenerateVarNameByUpperCase(typeName string) string {
+	if len(typeName) == 0 {
+		return ""
+	}
+
 	var result []rune
 	for _, r := range typeName {
 		if unicode.IsUpper(r) {
@@ -28,8 +32,9 @@ func GenerateVarNameByUpperCase(typeName string) string {
 		}
 	}
 
+	// return first letter if no upper case letter
 	if len(result) == 0 {
-		return typeName
+		return string(unicode.ToLower(rune(typeName[0])))
 	}
 
 	return string(result)
@@ -40,6 +45,10 @@ func GenerateVarNameByUpperCase(typeName string) string {
 // If there is no upper case character, the input string is returned.
 // the first character of the result is lower case.
 func GenerateVarNameByLastWord(typeName string) string {
+	if len(typeName) == 0 {
+		return ""
+	}
+
 	words := splitCamelCase(typeName)
 	if len(words) > 0 {
 		return strings.ToLower(words[len(words)-1])

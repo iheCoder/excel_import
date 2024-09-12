@@ -27,7 +27,7 @@ func TestGenerateVarNameByUpperCase(t *testing.T) {
 		},
 		{
 			typeName: "private",
-			expected: "private",
+			expected: "p",
 		},
 		{
 			typeName: "",
