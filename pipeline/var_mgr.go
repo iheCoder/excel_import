@@ -14,6 +14,8 @@ var (
 		"const": {}, "fallthrough": {}, "if": {}, "range": {}, "type": {},
 		"continue": {}, "for": {}, "import": {}, "return": {}, "var": {},
 	}
+
+	maxGenTries = 5
 )
 
 type VarInfo struct {
@@ -57,6 +59,66 @@ func (v *VarMgr) AddScope(key, parentKey string) bool {
 	return false
 }
 
+// GenerateVarNameInScope generates a variable name in the current scope.
+func (v *VarMgr) GenerateVarNameInScope(typeName, scopeKey string) (varName string, success bool) {
+	var tries int
+	s := v.findScope(scopeKey)
+	defer func() {
+		if success {
+			v.addVarInScope(varName, s)
+		}
+	}()
+
+	// first try to generate the var name by the upper case of the type name
+	varName = GenerateVarNameByUpperCase(typeName)
+	if !v.checkVarConflictInScope(varName, s) {
+		return varName, true
+	}
+	tries++
+
+	// then try to generate the var name by the last word of the type name
+	varName = GenerateVarNameByLastWord(typeName)
+	if !v.checkVarConflictInScope(varName, s) {
+		return varName, true
+	}
+	tries++
+
+	// if the above two methods failed, generate a random name
+	for tries < maxGenTries {
+		varName = generateRandomVarName(typeName)
+		if !v.checkVarConflictInScope(varName, s) {
+			return varName, true
+		}
+		tries++
+	}
+
+	return "", false
+}
+
+func (v *VarMgr) checkVarConflictInScope(varName string, s *scope) bool {
+	// check the var conflict in the global var pool
+	if _, ok := v.globalVarPool[varName]; !ok {
+		return false
+	}
+
+	// check the var conflict in the current scope
+	if s.checkVarConflict(varName) {
+		return true
+	}
+
+	return false
+}
+
+func (v *VarMgr) addVarInScope(varName string, s *scope) {
+	// add the var
+	s.addVar(varName)
+
+	// register the var
+	v.globalVarPool[varName] = &VarInfo{
+		varName: varName,
+	}
+}
+
 // AddVarInScope adds a variable to the current scope.
 func (v *VarMgr) AddVarInScope(varName, scopeKey string) bool {
 	// check the keyword conflict
@@ -70,20 +132,13 @@ func (v *VarMgr) AddVarInScope(varName, scopeKey string) bool {
 		return false
 	}
 
-	// check the global var pool conflict
-	if _, ok := v.globalVarPool[varName]; ok {
-		if s.checkVarConflict(varName) {
-			return false
-		}
+	// check the var name conflict
+	if s.checkVarConflict(varName) {
+		return false
 	}
 
 	// add the var
-	s.addVar(varName)
-
-	// register the var
-	v.globalVarPool[varName] = &VarInfo{
-		varName: varName,
-	}
+	v.addVarInScope(varName, s)
 
 	return true
 }
@@ -163,4 +218,9 @@ func splitCamelCase(input string) []string {
 func checkKeywordConflict(varName string) bool {
 	_, ok := goKeywords[varName]
 	return ok
+}
+
+func generateRandomVarName(varType string) string {
+	// TODO implements
+	return ""
 }
