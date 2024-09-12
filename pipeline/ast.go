@@ -9,6 +9,7 @@ import (
 const (
 	DefaultOKVarName = "ok"
 	NilToken         = "nil"
+	DefaultErrToken  = "err"
 )
 
 type AstGenerator struct {
@@ -253,7 +254,7 @@ func CreateStructAssignStmt(relation StructFieldsRelation) *ast.AssignStmt {
 }
 
 // CreateFuncCallStmt creates a function call statement with the given function call.
-func CreateFuncCallStmt(call *FuncCall) *ast.ExprStmt {
+func CreateFuncCallStmt(call *FuncCall) ast.Stmt {
 	// Create a function call expression with the given function name and arguments.
 	fc := &ast.CallExpr{
 		Fun: ast.NewIdent(call.FuncName),
@@ -272,14 +273,24 @@ func CreateFuncCallStmt(call *FuncCall) *ast.ExprStmt {
 		fc.Args = append(fc.Args, ast.NewIdent(arg.Name))
 	}
 
-	// Set the return variables to the function call expression.
-	for _, rv := range call.ReturnVars {
-		fc.Args = append(fc.Args, ast.NewIdent(rv.Name))
+	// If the return variables are not nil, set the return variables to the function call expression.
+	if len(call.ReturnVars) == 0 {
+		return &ast.ExprStmt{
+			X: fc,
+		}
 	}
 
-	// Create an expression statement with the function call expression.
-	return &ast.ExprStmt{
-		X: fc,
+	// Create a value specification with the given return variables.
+	lhs := make([]ast.Expr, len(call.ReturnVars))
+	for i, rv := range call.ReturnVars {
+		lhs[i] = ast.NewIdent(rv.Name)
+	}
+
+	// Create an assignment statement with the function call expression and return variables.
+	return &ast.AssignStmt{
+		Lhs: lhs,
+		Tok: token.DEFINE,
+		Rhs: []ast.Expr{fc},
 	}
 }
 

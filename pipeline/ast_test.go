@@ -71,6 +71,16 @@ func assignStmtToString(as *ast.AssignStmt) string {
 	return buf.String()
 }
 
+func stmtToString(stmt ast.Stmt) string {
+	var buf bytes.Buffer
+	err := printer.Fprint(&buf, token.NewFileSet(), stmt)
+	if err != nil {
+		log.Fatalf("Error printing AST: %v", err)
+	}
+
+	return buf.String()
+}
+
 func TestCreateStructDecl(t *testing.T) {
 	type testData struct {
 		name   string
@@ -173,4 +183,78 @@ func TestCreateStructAssignStmt(t *testing.T) {
 			t.Errorf("CreateStructAssignStmt(%v) =\n %v\n, want\n %v", test.relation, got, test.expected)
 		}
 	}
+}
+
+func TestCreateFuncCallStmt(t *testing.T) {
+	type testData struct {
+		call     *FuncCall
+		expected string
+	}
+
+	tests := []testData{
+		{
+			call: &FuncCall{
+				FuncName: "Create",
+				Args: []Var{
+					{
+						Name: "model",
+					},
+				},
+				ReturnVars: []Var{
+					{
+						Name: "err",
+					},
+				},
+			},
+			expected: "err := Create(model)",
+		},
+		{
+			call: &FuncCall{
+				FuncName: "Print",
+				Args: []Var{
+					{
+						Name: "msg",
+					},
+				},
+			},
+			expected: "Print(msg)",
+		},
+		{
+			call: &FuncCall{
+				FuncName: "Create",
+				Args: []Var{
+					{
+						Name: "&model",
+					},
+				},
+				ReturnVars: []Var{
+					{
+						Name: "err",
+					},
+				},
+				Receiver: &StructInfo{
+					VarName: "db",
+				},
+			},
+			expected: "err := db.Create(&model)",
+		},
+	}
+
+	for _, test := range tests {
+		stmt := CreateFuncCallStmt(test.call)
+		got := stmtToString(stmt)
+		if got != test.expected {
+			t.Errorf("CreateFuncCallStmt(%v) =\n %v\n, want\n %v", test.call, got, test.expected)
+		}
+	}
+}
+
+func exprStmtToString(stmt *ast.ExprStmt) string {
+	var buf bytes.Buffer
+	err := printer.Fprint(&buf, token.NewFileSet(), stmt)
+	if err != nil {
+		log.Fatalf("Error printing AST: %v", err)
+	}
+
+	return buf.String()
 }
