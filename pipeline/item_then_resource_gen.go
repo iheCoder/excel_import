@@ -17,7 +17,7 @@ var (
 type ItemResourceAstGenerator struct {
 	f *ast.File
 	// struct name and its fields relation
-	relations map[string]StructFieldsRelation
+	relations map[string]*StructFieldsRelation
 }
 
 func (i *ItemResourceAstGenerator) AddImportDecl() {
@@ -57,7 +57,7 @@ func (i *ItemResourceAstGenerator) createTypeAssertStmt(source, target Var) *ast
 	return typeAssertStmt
 }
 
-func (i *ItemResourceAstGenerator) createStructAssignStmt(receptor StructInfo) *ast.AssignStmt {
+func (i *ItemResourceAstGenerator) CreateStructAssignStmt(receptor StructInfo) *ast.AssignStmt {
 	// get struct fields relation
 	relation, ok := i.relations[receptor.Name]
 	if !ok {
@@ -91,6 +91,23 @@ func CreateGormDBCreateBlockStmt(db, model Var) []ast.Stmt {
 
 	// Combine the assignment and if statement
 	return []ast.Stmt{fcs, ifStmt}
+}
+
+func CreateCreateModelCaseClause(dbVar Var, condVars []Var, relation *StructFieldsRelation) *ast.CaseClause {
+	modelVar := Var{
+		Name: "model",
+	}
+	// create struct assign statement
+	relation.Info.VarName = modelVar.Name
+	assignStmt := CreateStructAssignStmt(relation)
+
+	// create gorm db create block statement
+	createBlockStmt := CreateGormDBCreateBlockStmt(dbVar, modelVar)
+
+	// create case clause
+	stmts := []ast.Stmt{assignStmt}
+	stmts = append(stmts, createBlockStmt...)
+	return CreateCaseClause(condVars, stmts)
 }
 
 func TransferStructFieldsRelation(info *StructInfo, graph *ModelGraph) StructFieldsRelation {

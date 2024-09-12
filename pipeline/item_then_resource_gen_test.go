@@ -33,3 +33,32 @@ func ifStmtToString(stmt *ast.IfStmt) string {
 
 	return buf.String()
 }
+
+func TestCreateCreateModelCaseClause(t *testing.T) {
+	dbVar := Var{
+		Name: "tx",
+	}
+	condVars := []Var{
+		{
+			Name: "1",
+		},
+	}
+	relation := &StructFieldsRelation{
+		Info: StructInfo{
+			Name: "Genshin",
+		},
+		Fields: []FieldRelation{
+			{
+				ReceptorFieldName: "Hero",
+				ProviderVarName:   "excelModel",
+				ProviderFieldName: "Hero",
+			},
+		},
+	}
+	stmt := CreateCreateModelCaseClause(dbVar, condVars, relation)
+	want := "case 1:\n\tmodel := Genshin{Hero: excelModel.Hero}\n\terr := tx.Create(model)\n\tif err != nil {\n\t\treturn err\n\t}"
+	got := stmtToString(stmt)
+	if got != want {
+		t.Errorf("CreateCreateModelCaseClause() =\n %v\n, want\n %v", got, want)
+	}
+}

@@ -186,7 +186,7 @@ func TestCreateStructAssignStmt(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		spec := CreateStructAssignStmt(test.relation)
+		spec := CreateStructAssignStmt(&(test.relation))
 		got := assignStmtToString(spec)
 		if got != test.expected {
 			t.Errorf("CreateStructAssignStmt(%v) =\n %v\n, want\n %v", test.relation, got, test.expected)
