@@ -46,6 +46,17 @@ func (v *VarMgr) AddScopeAtRoot(key string) {
 	newScope(key, v.rootScope)
 }
 
+// AddScope creates a new scope at the current scope.
+func (v *VarMgr) AddScope(key, parentKey string) bool {
+	s := v.findScope(parentKey)
+	if s != nil {
+		newScope(key, s)
+		return true
+	}
+
+	return false
+}
+
 // AddVarInScope adds a variable to the current scope.
 func (v *VarMgr) AddVarInScope(varName, scopeKey string) bool {
 	// check the keyword conflict
