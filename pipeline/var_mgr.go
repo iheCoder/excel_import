@@ -19,6 +19,24 @@ var (
 type VarMgr struct {
 }
 
+type scope struct {
+	vars   map[string]bool
+	parent *scope
+}
+
+func (s *scope) addVar(varName string) {
+	s.vars[varName] = true
+}
+
+func (s *scope) hasVar(varName string) bool {
+	_, ok := s.vars[varName]
+	return ok
+}
+
+func (s *scope) removeVar(varName string) {
+	delete(s.vars, varName)
+}
+
 // GenerateVarNameByUpperCase generates a string by the upper case of the input string.
 func GenerateVarNameByUpperCase(typeName string) string {
 	if len(typeName) == 0 {
