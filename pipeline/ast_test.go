@@ -6,6 +6,7 @@ import (
 	"go/printer"
 	"go/token"
 	"log"
+	"strings"
 	"testing"
 )
 
@@ -69,6 +70,14 @@ func assignStmtToString(as *ast.AssignStmt) string {
 	}
 
 	return buf.String()
+}
+
+func stmtsToString(stmts []ast.Stmt) string {
+	output := make([]string, 0, len(stmts))
+	for _, stmt := range stmts {
+		output = append(output, stmtToString(stmt))
+	}
+	return strings.Join(output, "\n")
 }
 
 func stmtToString(stmt ast.Stmt) string {

@@ -69,26 +69,28 @@ func (i *ItemResourceAstGenerator) createStructAssignStmt(receptor StructInfo) *
 	return assignStmt
 }
 
-func (i *ItemResourceAstGenerator) createGormDBCreateIfStmt(db, model Var) *ast.IfStmt {
-	// create tx.Create(&model) statement
+func CreateGormDBCreateBlockStmt(db, model Var) []ast.Stmt {
+	// create err := tx.Create(&model) statement
+	errName := DefaultErrToken
 	fc := &FuncCall{
 		FuncName: "Create",
 		Args:     []Var{model},
 		ReturnVars: []Var{
 			{
-				Name: "err",
-				Type: "error",
+				Name: errName,
 			},
+		},
+		Receiver: &StructInfo{
+			VarName: db.Name,
 		},
 	}
 	fcs := CreateFuncCallStmt(fc)
 
-	// create if err != nil statement
-	ifStmt := CreateIfErrIsNotNilStmt("err")
+	// create if statement
+	ifStmt := CreateIfErrIsNotNilStmt(errName)
 
-	// add tx.Create(&model) statement to the if statement
-	ifStmt.Body.List = append(ifStmt.Body.List, fcs)
-	return ifStmt
+	// Combine the assignment and if statement
+	return []ast.Stmt{fcs, ifStmt}
 }
 
 func TransferStructFieldsRelation(info *StructInfo, graph *ModelGraph) StructFieldsRelation {
