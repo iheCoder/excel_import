@@ -16,6 +16,12 @@ var (
 	}
 )
 
+type VarInfo struct {
+	varName         string
+	parentScopeKeys map[string]bool
+	finalScopeKeys  map[string]bool
+}
+
 // VarMgr used to manage var generation and check scope conflict
 // for simplifying the variable name generation, we have some rules:
 // 1. scope will only have two levels: file scope and func scope.
@@ -25,34 +31,92 @@ type VarMgr struct {
 	// it's represented by the global scope.
 	// global scope is the go file scope of the generated code.
 	rootScope *scope
+	// globalVarPool is the global variable pool.
+	globalVarPool map[string]*VarInfo
 }
 
 // NewVarMgr creates a new VarMgr.
 func NewVarMgr() *VarMgr {
 	return &VarMgr{
-		rootScope: &scope{
-			vars: make(map[string]bool),
-		},
+		rootScope:     &scope{},
+		globalVarPool: make(map[string]*VarInfo),
 	}
 }
 
 // AddScopeAtRoot creates a new scope at the root scope.
 func (v *VarMgr) AddScopeAtRoot(key string) {
 	s := &scope{
-		key:  key,
-		vars: make(map[string]bool),
+		key: key,
 	}
 	v.rootScope.children = append(v.rootScope.children, s)
 	s.parent = v.rootScope
 }
 
 // AddVarInScope adds a variable to the current scope.
-func (v *VarMgr) AddVarInScope(varName, scopeKey string) {
+func (v *VarMgr) AddVarInScope(varName, scopeKey string) bool {
+	// check the keyword conflict
+	if checkKeywordConflict(varName) {
+		return false
+	}
+
+	// find the scope
 	s := v.findScope(scopeKey)
 	if s == nil {
-		return
+		return false
 	}
-	s.addVar(varName)
+
+	// check the conflict
+	if !v.CheckVarConflict(varName, s) {
+		return false
+	}
+
+	// register the var
+	v.registerVar(varName, s)
+
+	return true
+}
+
+func (v *VarMgr) registerVar(varName string, s *scope) {
+	// get the var info
+	vi, ok := v.globalVarPool[varName]
+	if !ok {
+		vi = &VarInfo{
+			varName:         varName,
+			parentScopeKeys: make(map[string]bool),
+			finalScopeKeys:  make(map[string]bool),
+		}
+		v.globalVarPool[varName] = vi
+	}
+
+	// register the scope parentScopeKeys
+	for _, psk := range s.parentScopeKeys {
+		vi.parentScopeKeys[psk] = true
+	}
+
+	// register the scope key
+	vi.finalScopeKeys[s.key] = true
+}
+
+func (v *VarMgr) CheckVarConflict(varName string, s *scope) bool {
+	// check the global var pool
+	vi, ok := v.globalVarPool[varName]
+	if !ok {
+		return true
+	}
+
+	// check the scope key exists in the var info
+	if vi.parentScopeKeys[s.key] {
+		return false
+	}
+
+	// check the scope parent keys exists in the var info
+	for _, psk := range s.parentScopeKeys {
+		if vi.finalScopeKeys[psk] {
+			return false
+		}
+	}
+
+	return true
 }
 
 // findScope finds the scope by the key.
@@ -73,26 +137,6 @@ func (v *VarMgr) findScopeRecursive(s *scope, key string) *scope {
 	}
 
 	return nil
-}
-
-type scope struct {
-	key      string
-	vars     map[string]bool
-	parent   *scope
-	children []*scope
-}
-
-func (s *scope) addVar(varName string) {
-	s.vars[varName] = true
-}
-
-func (s *scope) hasVar(varName string) bool {
-	_, ok := s.vars[varName]
-	return ok
-}
-
-func (s *scope) removeVar(varName string) {
-	delete(s.vars, varName)
 }
 
 // GenerateVarNameByUpperCase generates a string by the upper case of the input string.
