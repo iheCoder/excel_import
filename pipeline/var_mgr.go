@@ -76,7 +76,14 @@ func (v *VarMgr) GenerateVarNameInScope(typeName, scopeKey string) (varName stri
 	}
 	tries++
 
-	// then try to generate the var name by the last word of the type name
+	// then try to generate the var name by the lower case of the first word of the type name
+	varName = GenerateVarNameByLowerFirst(typeName)
+	if !v.checkVarConflictInScope(varName, s) {
+		return varName, true
+	}
+	tries++
+
+	// later try to generate the var name by the last word of the type name
 	varName = GenerateVarNameByLastWord(typeName)
 	if !v.checkVarConflictInScope(varName, s) {
 		return varName, true
@@ -161,6 +168,24 @@ func (v *VarMgr) findScopeRecursive(s *scope, key string) *scope {
 	}
 
 	return nil
+}
+
+// GenerateVarNameByLowerFirst generates a string by the lower case of the first word and combines the remains words.
+func GenerateVarNameByLowerFirst(typeName string) string {
+	if len(typeName) == 0 {
+		return ""
+	}
+
+	words := splitCamelCase(typeName)
+	var varName string
+	if len(words) > 0 {
+		varName = strings.ToLower(words[0])
+		for i := 1; i < len(words); i++ {
+			varName += words[i]
+		}
+	}
+
+	return varName
 }
 
 // GenerateVarNameByUpperCase generates a string by the upper case of the input string.
