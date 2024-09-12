@@ -8,12 +8,16 @@ type scope struct {
 }
 
 func newScope(key string, parent *scope) *scope {
-	return &scope{
+	s := &scope{
 		key:      key,
 		parent:   parent,
 		children: make([]*scope, 0),
 		vars:     make(map[string]bool),
 	}
+	if parent != nil {
+		parent.addChild(s)
+	}
+	return s
 }
 
 // addChild adds a child to the scope.
@@ -24,10 +28,6 @@ func (s *scope) addChild(child *scope) {
 
 // addVar adds a var to the scope.
 func (s *scope) addVar(varName string) bool {
-	if s.checkVarConflict(varName) {
-		return false
-	}
-
 	s.vars[varName] = true
 	return true
 }

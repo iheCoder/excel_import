@@ -17,9 +17,7 @@ var (
 )
 
 type VarInfo struct {
-	varName         string
-	parentScopeKeys map[string]bool
-	finalScopeKeys  map[string]bool
+	varName string
 }
 
 // VarMgr used to manage var generation and check scope conflict
@@ -38,18 +36,14 @@ type VarMgr struct {
 // NewVarMgr creates a new VarMgr.
 func NewVarMgr() *VarMgr {
 	return &VarMgr{
-		rootScope:     &scope{},
+		rootScope:     newScope("", nil),
 		globalVarPool: make(map[string]*VarInfo),
 	}
 }
 
 // AddScopeAtRoot creates a new scope at the root scope.
 func (v *VarMgr) AddScopeAtRoot(key string) {
-	s := &scope{
-		key: key,
-	}
-	v.rootScope.children = append(v.rootScope.children, s)
-	s.parent = v.rootScope
+	newScope(key, v.rootScope)
 }
 
 // AddVarInScope adds a variable to the current scope.
@@ -65,55 +59,19 @@ func (v *VarMgr) AddVarInScope(varName, scopeKey string) bool {
 		return false
 	}
 
-	// check the conflict
-	if !v.CheckVarConflict(varName, s) {
-		return false
-	}
-
-	// register the var
-	v.registerVar(varName, s)
-
-	return true
-}
-
-func (v *VarMgr) registerVar(varName string, s *scope) {
-	// get the var info
-	vi, ok := v.globalVarPool[varName]
-	if !ok {
-		vi = &VarInfo{
-			varName:         varName,
-			parentScopeKeys: make(map[string]bool),
-			finalScopeKeys:  make(map[string]bool),
-		}
-		v.globalVarPool[varName] = vi
-	}
-
-	// register the scope parentScopeKeys
-	for _, psk := range s.parentScopeKeys {
-		vi.parentScopeKeys[psk] = true
-	}
-
-	// register the scope key
-	vi.finalScopeKeys[s.key] = true
-}
-
-func (v *VarMgr) CheckVarConflict(varName string, s *scope) bool {
-	// check the global var pool
-	vi, ok := v.globalVarPool[varName]
-	if !ok {
-		return true
-	}
-
-	// check the scope key exists in the var info
-	if vi.parentScopeKeys[s.key] {
-		return false
-	}
-
-	// check the scope parent keys exists in the var info
-	for _, psk := range s.parentScopeKeys {
-		if vi.finalScopeKeys[psk] {
+	// check the global var pool conflict
+	if _, ok := v.globalVarPool[varName]; ok {
+		if s.checkVarConflict(varName) {
 			return false
 		}
+	}
+
+	// add the var
+	s.addVar(varName)
+
+	// register the var
+	v.globalVarPool[varName] = &VarInfo{
+		varName: varName,
 	}
 
 	return true
