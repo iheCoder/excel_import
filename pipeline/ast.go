@@ -224,6 +224,21 @@ func CreateSwitchStmt(x, sel string, cases []*ast.CaseClause) *ast.SwitchStmt {
 	}
 }
 
+// CreateCaseClause create a case clause with the given var and body.
+func CreateCaseClause(vars []string, body []ast.Stmt) *ast.CaseClause {
+	// Create a list of expressions with the given vars.
+	list := make([]ast.Expr, len(vars))
+	for i, v := range vars {
+		list[i] = ast.NewIdent(v)
+	}
+
+	// Create a case clause with the given vars and body.
+	return &ast.CaseClause{
+		List: list,
+		Body: body,
+	}
+}
+
 // CreateStructAssignStmt creates a value specification with the given struct fields relation.
 func CreateStructAssignStmt(relation StructFieldsRelation) *ast.AssignStmt {
 	// Create a composite literal with the given struct name.
