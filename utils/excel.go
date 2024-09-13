@@ -116,6 +116,7 @@ func readCSV(path string) ([][]string, error) {
 	defer file.Close()
 
 	reader := csv.NewReader(file)
+	reader.FieldsPerRecord = -1
 	var records [][]string
 	for {
 		record, err := reader.Read()
