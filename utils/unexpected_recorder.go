@@ -6,8 +6,11 @@ import (
 	"sync"
 )
 
-const checkFailedPath = "check_failed.csv"
-const importFailedPath = "import_failed.csv"
+const (
+	checkFailedPath   = "check_failed.csv"
+	importFailedPath  = "import_failed.csv"
+	contentStartIndex = 1
+)
 
 type UnexpectedRecorder struct {
 	checkFailedPath       string
@@ -71,6 +74,27 @@ func (u *UnexpectedRecorder) RecordImportError(err error) error {
 
 	// Write the error into the csv file.
 	return u.importFailedCsvWriter.Write([]string{err.Error()})
+}
+
+func (u *UnexpectedRecorder) RecordImportErrorWithContent(err error, contents ...string) error {
+	if err == nil {
+		return nil
+	}
+
+	u.mu.Lock()
+	defer u.mu.Unlock()
+
+	// Initialize the csv writer.
+	if u.importFailedCsvWriter == nil {
+		uerr := u.initImportFailedCsvWriter()
+		if uerr != nil {
+			return uerr
+		}
+	}
+
+	// Write the error and content into the csv file.
+	errWithContent := append([]string{err.Error()}, contents...)
+	return u.importFailedCsvWriter.Write(errWithContent)
 }
 
 func (u *UnexpectedRecorder) initImportFailedCsvWriter() error {
