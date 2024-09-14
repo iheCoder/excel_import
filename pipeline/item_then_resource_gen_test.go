@@ -6,6 +6,7 @@ import (
 	"go/printer"
 	"go/token"
 	"log"
+	"os"
 	"testing"
 )
 
@@ -251,6 +252,138 @@ func TestItemResourceAstGenerator_AddImportSectionFunc(t *testing.T) {
 	got := declToString(generator.f.Decls[0])
 	if got != want {
 		t.Errorf("AddImportSectionFunc() =\n %v\n, want\n %v", got, want)
+	}
+
+	t.Log("PASS")
+}
+
+func TestItemResourceAstGenerator_AddImportDecl(t *testing.T) {
+	generator := &ItemResourceAstGenerator{
+		f: &ast.File{},
+	}
+
+	// add import decl
+	generator.AddImportDecl()
+
+	// check the import decl
+	want := "import (\n\t\"errors\"\n\t\"gorm.io/gorm\"\n\t\n\t\"excel_import/general_framework\"\n)"
+	got := declToString(generator.f.Decls[0])
+	if got != want {
+		t.Errorf("AddImportDecl() =\n %v\n, want\n %v", got, want)
+	}
+}
+
+func TestItemResourceAstGenerator_AddStructDecl(t *testing.T) {
+	generator := &ItemResourceAstGenerator{
+		f: &ast.File{},
+	}
+
+	// add struct decl
+	generator.AddStructDecl()
+
+	// check the struct decl
+	want := "type SectionImporter struct {\n}"
+	got := declToString(generator.f.Decls[0])
+	if got != want {
+		t.Errorf("AddStructDecl() =\n %v\n, want\n %v", got, want)
+	}
+}
+
+func TestItemResourceAstGenerator_AddNewFuncStructDecl(t *testing.T) {
+	generator := &ItemResourceAstGenerator{
+		f: &ast.File{},
+	}
+
+	// add new func struct decl
+	generator.AddNewFuncStructDecl()
+
+	// check the new func struct decl
+	want := "func NewSectionImporter() *SectionImporter {\n\treturn SectionImporter{}\n}"
+	got := declToString(generator.f.Decls[0])
+	if got != want {
+		t.Errorf("AddNewFuncStructDecl() =\n %v\n, want\n %v", got, want)
+	}
+}
+
+func TestItemResourceAstGenerator_Build(t *testing.T) {
+	// create relations
+	relations := make(map[string]*StructFieldsRelation)
+	relations["Resource1"] = &StructFieldsRelation{
+		Info: StructInfo{
+			Name: "Resource1",
+		},
+		Fields: []FieldRelation{
+			{
+				ReceptorFieldName: "Name",
+				ProviderFieldName: "Name",
+			},
+		},
+	}
+	relations["Resource2"] = &StructFieldsRelation{
+		Info: StructInfo{
+			Name: "Resource2",
+		},
+		Fields: []FieldRelation{
+			{
+				ReceptorFieldName: "Name",
+				ProviderFieldName: "Name",
+			},
+		},
+	}
+
+	// create case resource items
+	items := []*CaseResourceItem{
+		{
+			CondVars: []Var{
+				{
+					Name: "1",
+				},
+			},
+			Info: &StructInfo{
+				Name: "Resource1",
+			},
+		},
+		{
+			Info: &StructInfo{
+				Name: "Resource2",
+			},
+		},
+	}
+
+	// create var mgr
+	mgr := NewVarMgr()
+
+	// create item resource
+	info := &StructInfo{
+		Name: "Resource",
+	}
+
+	// create switch field
+	field := &Field{
+		Name: "Type",
+	}
+
+	// create item resource ast generator
+	generator := &ItemResourceAstGenerator{
+		relations:         relations,
+		caseResourceItems: items,
+		mgr:               mgr,
+		resourceInfo:      info,
+		switchField:       field,
+		path:              "test.go",
+		pkgName:           "pipeline",
+	}
+
+	// build
+	err := generator.Build()
+	if err != nil {
+		t.Errorf("Build() = %v, want nil", err)
+	}
+
+	// remove the file
+	err = os.Remove(generator.path)
+	if err != nil {
+		t.Errorf("Remove() = %v, want nil", err)
 	}
 
 	t.Log("PASS")

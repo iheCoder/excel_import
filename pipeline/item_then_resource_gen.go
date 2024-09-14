@@ -29,6 +29,9 @@ type CaseResourceItem struct {
 }
 
 type ItemResourceAstGenerator struct {
+	// generated file path
+	path string
+	// ast file
 	f *ast.File
 	// struct name and its fields relation
 	relations map[string]*StructFieldsRelation
@@ -40,6 +43,34 @@ type ItemResourceAstGenerator struct {
 	resourceInfo *StructInfo
 	// switch field
 	switchField *Field
+	// package name
+	pkgName string
+}
+
+func (i *ItemResourceAstGenerator) Build() error {
+	// create ast file
+	i.f = &ast.File{
+		Name: ast.NewIdent(i.pkgName),
+	}
+
+	// add import declaration
+	i.AddImportDecl()
+
+	// add struct declaration
+	i.AddStructDecl()
+
+	// add new func struct declaration
+	i.AddNewFuncStructDecl()
+
+	// create struct assign statement
+	varName, _ := i.mgr.GenerateVarNameInScope(structName, "")
+	i.AddImportSectionFunc(&StructInfo{
+		Name:    structName,
+		VarName: varName,
+	})
+
+	// write to file
+	return WriteAstToFile(i.f, i.path)
 }
 
 func (i *ItemResourceAstGenerator) AddImportDecl() {
@@ -207,8 +238,6 @@ func TransferStructFieldsRelation(info *StructInfo, graph *ModelGraph) StructFie
 		// create field relation
 		fieldsRelation = append(fieldsRelation, FieldRelation{
 			ReceptorFieldName: field.Name,
-			// TODO: replace into var name
-			ProviderVarName:   to.StructName,
 			ProviderFieldName: to.FieldName,
 		})
 	}
