@@ -148,7 +148,8 @@ func TestItemResourceAstGenerator_AddSwitchCreateResourceItem(t *testing.T) {
 	fd := &FuncDef{
 		FuncName: funcName,
 	}
-	generator.AddSwitchCreateResourceItem(dbVar, resVar, field, fd, funcDecl)
+	ss := generator.CreateSwitchCreateResourceItem(dbVar, resVar, field, fd)
+	funcDecl.Body.List = append(funcDecl.Body.List, ss)
 
 	// check the switch stmt
 	want := "func CreateResource() {\n\tswitch resource.Type {\n\tcase 1:\n\t\tr := Resource1{Name: excelModel.Name}\n\t\terr := tx.Create(r)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\tdefault:\n\t\tresource2 := Resource2{Name: excelModel.Name}\n\t\terr := tx.Create(resource2)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n}"
@@ -168,4 +169,89 @@ func funcDeclToString(fd *ast.FuncDecl) string {
 	}
 
 	return buf.String()
+}
+
+func TestItemResourceAstGenerator_AddImportSectionFunc(t *testing.T) {
+	// create relations
+	relations := make(map[string]*StructFieldsRelation)
+	relations["Resource1"] = &StructFieldsRelation{
+		Info: StructInfo{
+			Name: "Resource1",
+		},
+		Fields: []FieldRelation{
+			{
+				ReceptorFieldName: "Name",
+				ProviderFieldName: "Name",
+			},
+		},
+	}
+	relations["Resource2"] = &StructFieldsRelation{
+		Info: StructInfo{
+			Name: "Resource2",
+		},
+		Fields: []FieldRelation{
+			{
+				ReceptorFieldName: "Name",
+				ProviderFieldName: "Name",
+			},
+		},
+	}
+
+	// create case resource items
+	items := []*CaseResourceItem{
+		{
+			CondVars: []Var{
+				{
+					Name: "1",
+				},
+			},
+			Info: &StructInfo{
+				Name: "Resource1",
+			},
+		},
+		{
+			Info: &StructInfo{
+				Name: "Resource2",
+			},
+		},
+	}
+
+	// create var mgr
+	mgr := NewVarMgr()
+
+	// create item resource
+	info := &StructInfo{
+		Name: "Resource",
+	}
+
+	// create switch field
+	field := &Field{
+		Name: "Type",
+	}
+
+	// create item resource ast generator
+	generator := &ItemResourceAstGenerator{
+		relations:         relations,
+		caseResourceItems: items,
+		mgr:               mgr,
+		resourceInfo:      info,
+		switchField:       field,
+		f:                 &ast.File{},
+	}
+
+	// add import section func
+	receiver := &StructInfo{
+		Name:    "SectionImporter",
+		VarName: "si",
+	}
+	generator.AddImportSectionFunc(receiver)
+
+	// check the import section func
+	want := "func (si SectionImporter) ImportSection(tx *gorm.DB, rc *general_framework.RawContent) error {\n\tif r, ok := rc.GetModel().(Resource); !ok {\n\t\treturn errors.New(\"type assertion failed\")\n\t}\n\tswitch r.Type {\n\tcase 1:\n\t\tresource1 := Resource1{Name: .Name}\n\t\terr := tx.Create(resource1)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\tdefault:\n\t\tresource2 := Resource2{Name: .Name}\n\t\terr := tx.Create(resource2)\n\t\tif err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n}"
+	got := declToString(generator.f.Decls[0])
+	if got != want {
+		t.Errorf("AddImportSectionFunc() =\n %v\n, want\n %v", got, want)
+	}
+
+	t.Log("PASS")
 }

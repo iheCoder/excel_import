@@ -11,7 +11,16 @@ var (
 		"",
 		"excel_import/general_framework",
 	}
-	structName = "SectionImporter"
+	structName           = "SectionImporter"
+	dbField              = Field{VarName: "tx", Type: "*gorm.DB"}
+	rcField              = Field{VarName: "rc", Type: "*general_framework.RawContent"}
+	importSectionFuncDef = FuncDef{
+		FuncName: "ImportSection",
+		Params:   []Field{dbField, rcField},
+		Results:  []Field{{Type: "error"}},
+	}
+
+	emptyStmt = &ast.EmptyStmt{}
 )
 
 type CaseResourceItem struct {
@@ -27,6 +36,10 @@ type ItemResourceAstGenerator struct {
 	caseResourceItems []*CaseResourceItem
 	// var manager
 	mgr *VarMgr
+	// resource struct info
+	resourceInfo *StructInfo
+	// switch field
+	switchField *Field
 }
 
 func (i *ItemResourceAstGenerator) AddImportDecl() {
@@ -102,7 +115,45 @@ func CreateGormDBCreateBlockStmt(db, model Var) []ast.Stmt {
 	return []ast.Stmt{fcs, ifStmt}
 }
 
-func (i *ItemResourceAstGenerator) AddSwitchCreateResourceItem(dbVar, resVar Var, field *Field, fd *FuncDef, afd *ast.FuncDecl) {
+func (i *ItemResourceAstGenerator) AddImportSectionFunc(receiver *StructInfo) {
+	funcDef := importSectionFuncDef
+	funcDef.Receiver = receiver
+
+	// register var
+	i.mgr.AddScopeAtRoot(funcDef.FuncName)
+	for _, param := range funcDef.Params {
+		i.mgr.AddVarInScope(param.VarName, funcDef.FuncName)
+	}
+
+	// create func declaration
+	funcDecl := CreateFuncDecl(&funcDef)
+
+	// create type assertion statement
+	sourceVar := Var{Name: rcField.VarName + ".GetModel()"}
+	mvName, _ := i.mgr.GenerateVarNameInScope(i.resourceInfo.Name, funcDef.FuncName)
+	modelVar := Var{Name: mvName, Type: i.resourceInfo.Name}
+	typeAssertStmt := i.createTypeAssertStmt(sourceVar, modelVar)
+
+	// create switch statement
+	i.setProviderVarName(modelVar)
+	switchStmt := i.CreateSwitchCreateResourceItem(Var{Name: dbField.VarName}, modelVar, i.switchField, &funcDef)
+
+	// add statements to the function body
+	funcDecl.Body.List = append(funcDecl.Body.List, typeAssertStmt, emptyStmt, switchStmt)
+
+	// add function declaration to the file
+	i.f.Decls = append(i.f.Decls, funcDecl)
+}
+
+func (i *ItemResourceAstGenerator) setProviderVarName(modelVar Var) {
+	for _, relation := range i.relations {
+		for _, field := range relation.Fields {
+			field.ProviderVarName = modelVar.Name
+		}
+	}
+}
+
+func (i *ItemResourceAstGenerator) CreateSwitchCreateResourceItem(dbVar, resVar Var, field *Field, fd *FuncDef) *ast.SwitchStmt {
 	// create case clauses
 	caseCluases := make([]*ast.CaseClause, 0, len(i.caseResourceItems))
 	for _, item := range i.caseResourceItems {
@@ -123,8 +174,7 @@ func (i *ItemResourceAstGenerator) AddSwitchCreateResourceItem(dbVar, resVar Var
 	// create switch statement
 	switchStmt := CreateSwitchStmt(resVar.Name, field.Name, caseCluases)
 
-	// add switch statement to the function body
-	afd.Body.List = append(afd.Body.List, switchStmt)
+	return switchStmt
 }
 
 func CreateCreateModelCaseClause(dbVar, modelVar Var, condVars []Var, relation *StructFieldsRelation) *ast.CaseClause {

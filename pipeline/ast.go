@@ -153,6 +153,7 @@ func CreateFuncDecl(def *FuncDef) *ast.FuncDecl {
 		Recv: recv,
 		Name: ast.NewIdent(def.FuncName),
 		Type: ftype,
+		Body: &ast.BlockStmt{},
 	}
 }
 
