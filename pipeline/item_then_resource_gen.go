@@ -14,10 +14,19 @@ var (
 	structName = "SectionImporter"
 )
 
+type CaseResourceItem struct {
+	CondVars []Var
+	Info     *StructInfo
+}
+
 type ItemResourceAstGenerator struct {
 	f *ast.File
 	// struct name and its fields relation
 	relations map[string]*StructFieldsRelation
+	// case resource items
+	caseResourceItems []*CaseResourceItem
+	// var manager
+	mgr *VarMgr
 }
 
 func (i *ItemResourceAstGenerator) AddImportDecl() {
@@ -57,7 +66,7 @@ func (i *ItemResourceAstGenerator) createTypeAssertStmt(source, target Var) *ast
 	return typeAssertStmt
 }
 
-func (i *ItemResourceAstGenerator) CreateStructAssignStmt(receptor StructInfo) *ast.AssignStmt {
+func (i *ItemResourceAstGenerator) CreateStructAssignStmt(receptor *StructInfo) *ast.AssignStmt {
 	// get struct fields relation
 	relation, ok := i.relations[receptor.Name]
 	if !ok {
@@ -91,6 +100,31 @@ func CreateGormDBCreateBlockStmt(db, model Var) []ast.Stmt {
 
 	// Combine the assignment and if statement
 	return []ast.Stmt{fcs, ifStmt}
+}
+
+func (i *ItemResourceAstGenerator) AddSwitchCreateResourceItem(dbVar, resVar Var, field *Field, fd *FuncDef, afd *ast.FuncDecl) {
+	// create case clauses
+	caseCluases := make([]*ast.CaseClause, 0, len(i.caseResourceItems))
+	for _, item := range i.caseResourceItems {
+		// get struct fields relation
+		relation, ok := i.relations[item.Info.Name]
+		if !ok {
+			continue
+		}
+
+		// generate model var
+		modelVar, _ := i.mgr.GenerateVarNameInScope(item.Info.Name, fd.FuncName)
+
+		// create case clause
+		caseClause := CreateCreateModelCaseClause(dbVar, Var{Name: modelVar}, item.CondVars, relation)
+		caseCluases = append(caseCluases, caseClause)
+	}
+
+	// create switch statement
+	switchStmt := CreateSwitchStmt(resVar.Name, field.Name, caseCluases)
+
+	// add switch statement to the function body
+	afd.Body.List = append(afd.Body.List, switchStmt)
 }
 
 func CreateCreateModelCaseClause(dbVar, modelVar Var, condVars []Var, relation *StructFieldsRelation) *ast.CaseClause {

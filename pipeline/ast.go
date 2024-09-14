@@ -232,6 +232,11 @@ func CreateCaseClause(vars []Var, body []ast.Stmt) *ast.CaseClause {
 		list[i] = ast.NewIdent(v.Name)
 	}
 
+	// Set default if no vars are given.
+	if len(list) == 0 {
+		list = nil
+	}
+
 	// Create a case clause with the given vars and body.
 	return &ast.CaseClause{
 		List: list,
