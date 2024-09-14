@@ -1,9 +1,12 @@
 package pipeline
 
 import (
+	"bytes"
 	"fmt"
 	"go/ast"
+	"go/printer"
 	"go/token"
+	"os"
 )
 
 const (
@@ -355,4 +358,29 @@ func CreateNewStructReturnStmt(info *StructInfo) *ast.ReturnStmt {
 	return &ast.ReturnStmt{
 		Results: []ast.Expr{cl},
 	}
+}
+
+func WriteAstToFile(file *ast.File, path string) error {
+	// create a new bytes buffer
+	var buf bytes.Buffer
+
+	// create a new printer configuration
+	config := &printer.Config{
+		Mode:     printer.UseSpaces | printer.TabIndent,
+		Tabwidth: 8,
+	}
+
+	// print the AST to the buffer
+	err := config.Fprint(&buf, token.NewFileSet(), file)
+	if err != nil {
+		return err
+	}
+
+	// write the buffer to the file
+	err = os.WriteFile(path, buf.Bytes(), 0644)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
