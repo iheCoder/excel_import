@@ -2,14 +2,15 @@ package util
 
 import (
 	"encoding/csv"
+	"encoding/json"
 	"os"
 	"sync"
 )
 
 const (
-	checkFailedPath   = "check_failed.csv"
-	importFailedPath  = "import_failed.csv"
-	contentStartIndex = 1
+	checkFailedPath    = "check_failed.csv"
+	importFailedPath   = "import_failed.csv"
+	unexpectedJsonPath = "unexpected.jsonl"
 )
 
 type UnexpectedRecorder struct {
@@ -18,12 +19,17 @@ type UnexpectedRecorder struct {
 	importFailedPath      string
 	importFailedCsvWriter *csv.Writer
 	mu                    sync.Mutex
+	importFailedJsonPath  string
+	importFailedJsonFile  *os.File
+	jsonDecoder           *json.Decoder
+	jsonEncoder           *json.Encoder
 }
 
 func NewDefaultUnexpectedRecorder() *UnexpectedRecorder {
 	return &UnexpectedRecorder{
-		checkFailedPath:  checkFailedPath,
-		importFailedPath: importFailedPath,
+		checkFailedPath:      checkFailedPath,
+		importFailedPath:     importFailedPath,
+		importFailedJsonPath: unexpectedJsonPath,
 	}
 }
 
@@ -97,6 +103,44 @@ func (u *UnexpectedRecorder) RecordImportErrorWithContent(err error, contents ..
 	return u.importFailedCsvWriter.Write(errWithContent)
 }
 
+func (u *UnexpectedRecorder) RecordContentJson(content any) error {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+
+	// initialize the json file.
+	if u.importFailedJsonFile == nil {
+		file, err := os.Create(u.importFailedJsonPath)
+		if err != nil {
+			return err
+		}
+
+		u.importFailedJsonFile = file
+		u.jsonEncoder = json.NewEncoder(file)
+	}
+
+	// write the content into the json file.
+	return u.jsonEncoder.Encode(content)
+}
+
+func (u *UnexpectedRecorder) IterateJsonContent(contentObj any) bool {
+	// init the json decoder
+	if u.jsonDecoder == nil {
+		file, err := os.Open(u.importFailedJsonPath)
+		if err != nil {
+			panic(err)
+		}
+
+		u.jsonDecoder = json.NewDecoder(file)
+	}
+
+	// decode the content
+	if err := u.jsonDecoder.Decode(contentObj); err != nil {
+		return false
+	}
+
+	return true
+}
+
 func (u *UnexpectedRecorder) initImportFailedCsvWriter() error {
 	file, err := os.Create(u.importFailedPath)
 	if err != nil {
@@ -114,5 +158,9 @@ func (u *UnexpectedRecorder) Flush() {
 
 	if u.importFailedCsvWriter != nil {
 		u.importFailedCsvWriter.Flush()
+	}
+
+	if u.importFailedJsonFile != nil {
+		u.importFailedJsonFile.Close()
 	}
 }
