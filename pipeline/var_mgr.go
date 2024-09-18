@@ -1,8 +1,24 @@
 package pipeline
 
 import (
+	"fmt"
 	"strings"
 	"unicode"
+)
+
+type VarKind string
+
+const (
+	VarKindInt       VarKind = "int"
+	VarKindString    VarKind = "string"
+	VarKindBool      VarKind = "bool"
+	VarKindFloat     VarKind = "float"
+	VarKindInterface VarKind = "interface"
+	VarKindMap       VarKind = "map"
+	VarKindSlice     VarKind = "slice"
+	VarKindArray     VarKind = "array"
+	VarKindChan      VarKind = "chan"
+	VarKindStruct    VarKind = "struct"
 )
 
 // Keywords contains Go's reserved keywords that cannot be used as variable names.
@@ -105,6 +121,30 @@ func (v *VarMgr) GenerateVarNameInScope(typeName, scopeKey string) (varName stri
 	return "", false
 }
 
+func (v *VarMgr) GenerateVarNameByHint(varKind VarKind, hint string, scopeKey string) string {
+	// try to generate the var name by the hint
+	varName := hint
+	s := v.findScope(scopeKey)
+	if !v.checkVarConflictInScope(varName, s) {
+		v.addVarInScope(varName, s)
+		return varName
+	}
+
+	// if the hint is conflict, generate a suffix var name
+	suffix := 'A'
+	for tries := 0; tries < maxGenTries; tries++ {
+		varName = hint + string(suffix)
+		if !v.checkVarConflictInScope(varName, s) {
+			v.addVarInScope(varName, s)
+			return varName
+		}
+		suffix++
+	}
+
+	panic(fmt.Sprintf("failed to generate var name for %s", hint))
+}
+
+// checkVarConflictInScope checks the variable conflict in the current scope.
 func (v *VarMgr) checkVarConflictInScope(varName string, s *scope) bool {
 	// check the var conflict in the global var pool
 	if _, ok := v.globalVarPool[varName]; !ok {
