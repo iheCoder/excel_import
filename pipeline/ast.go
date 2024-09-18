@@ -360,6 +360,22 @@ func CreateNewStructReturnStmt(info *StructInfo) *ast.ReturnStmt {
 	}
 }
 
+// CreateDeclareVar creates a declaration statement with the given variable.
+// e.g., var x int
+func CreateDeclareVar(v Var) *ast.DeclStmt {
+	return &ast.DeclStmt{
+		Decl: &ast.GenDecl{
+			Tok: token.VAR,
+			Specs: []ast.Spec{
+				&ast.ValueSpec{
+					Names: []*ast.Ident{ast.NewIdent(v.Name)},
+					Type:  ast.NewIdent(v.Type),
+				},
+			},
+		},
+	}
+}
+
 func WriteAstToFile(file *ast.File, path string) error {
 	// create a new bytes buffer
 	var buf bytes.Buffer

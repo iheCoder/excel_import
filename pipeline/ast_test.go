@@ -267,3 +267,40 @@ func exprStmtToString(stmt *ast.ExprStmt) string {
 
 	return buf.String()
 }
+
+func TestCreateDeclareVar(t *testing.T) {
+	type testData struct {
+		varName  string
+		varType  string
+		expected string
+	}
+
+	tests := []testData{
+		{
+			varName:  "err",
+			varType:  "error",
+			expected: "var err error",
+		},
+		{
+			varName:  "msg",
+			varType:  "string",
+			expected: "var msg string",
+		},
+		{
+			varName:  "n",
+			varType:  "int",
+			expected: "var n int",
+		},
+	}
+
+	for _, test := range tests {
+		stmt := CreateDeclareVar(Var{
+			Name: test.varName,
+			Type: test.varType,
+		})
+		got := stmtToString(stmt)
+		if got != test.expected {
+			t.Errorf("CreateDeclareVar(%s, %s) =\n %s\n, want\n %s", test.varName, test.varType, got, test.expected)
+		}
+	}
+}
