@@ -186,7 +186,7 @@ func (i *ItemResourceAstGenerator) setProviderVarName(modelVar Var) {
 
 func (i *ItemResourceAstGenerator) CreateSwitchCreateResourceItem(dbVar, resVar Var, field *Field, fd *FuncDef) *ast.SwitchStmt {
 	// create case clauses
-	caseCluases := make([]*ast.CaseClause, 0, len(i.caseResourceItems))
+	caseClauses := make([]*ast.CaseClause, 0, len(i.caseResourceItems))
 	for _, item := range i.caseResourceItems {
 		// get struct fields relation
 		relation, ok := i.relations[item.Info.Name]
@@ -194,27 +194,32 @@ func (i *ItemResourceAstGenerator) CreateSwitchCreateResourceItem(dbVar, resVar 
 			continue
 		}
 
-		// generate model var
-		modelVar, _ := i.mgr.GenerateVarNameInScope(item.Info.Name, fd.FuncName)
+		// generate resource item var name
+		itemVarName, _ := i.mgr.GenerateVarNameInScope(item.Info.Name, fd.FuncName)
+
+		// set relation provider var name and info var name
+		for j := range relation.Fields {
+			relation.Fields[j].ProviderVarName = resVar.Name
+		}
+		relation.Info.VarName = itemVarName
 
 		// create case clause
-		caseClause := CreateCreateModelCaseClause(dbVar, Var{Name: modelVar}, item.CondVars, relation)
-		caseCluases = append(caseCluases, caseClause)
+		caseClause := CreateCreateModelCaseClause(dbVar, Var{Name: itemVarName}, item.CondVars, relation)
+		caseClauses = append(caseClauses, caseClause)
 	}
 
 	// create switch statement
-	switchStmt := CreateSwitchStmt(resVar.Name, field.Name, caseCluases)
+	switchStmt := CreateSwitchStmt(resVar.Name, field.Name, caseClauses)
 
 	return switchStmt
 }
 
-func CreateCreateModelCaseClause(dbVar, modelVar Var, condVars []Var, relation *StructFieldsRelation) *ast.CaseClause {
+func CreateCreateModelCaseClause(dbVar, receptor Var, condVars []Var, relation *StructFieldsRelation) *ast.CaseClause {
 	// create struct assign statement
-	relation.Info.VarName = modelVar.Name
 	assignStmt := CreateStructAssignStmt(relation)
 
 	// create gorm db create block statement
-	createBlockStmt := CreateGormDBCreateBlockStmt(dbVar, modelVar)
+	createBlockStmt := CreateGormDBCreateBlockStmt(dbVar, receptor)
 
 	// create case clause
 	stmts := []ast.Stmt{assignStmt}
