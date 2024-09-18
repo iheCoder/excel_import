@@ -165,12 +165,17 @@ func (i *ItemResourceAstGenerator) AddImportSectionFunc(receiver *StructInfo) {
 	modelVar := Var{Name: mvName, Type: i.resourceInfo.Name}
 	typeAssertStmt := i.createTypeAssertStmt(sourceVar, modelVar)
 
+	// declare resource id var
+	idVarName, _ := i.mgr.GenerateVarNameInScope("id", funcDef.FuncName)
+	idVar := Var{Name: idVarName, Type: "int64"}
+	idVarDecl := CreateDeclareVar(idVar)
+
 	// create switch statement
 	i.setProviderVarName(modelVar)
 	switchStmt := i.CreateSwitchCreateResourceItem(Var{Name: dbField.VarName}, modelVar, i.switchField, &funcDef)
 
 	// add statements to the function body
-	funcDecl.Body.List = append(funcDecl.Body.List, typeAssertStmt, emptyStmt, switchStmt)
+	funcDecl.Body.List = append(funcDecl.Body.List, typeAssertStmt, emptyStmt, idVarDecl, switchStmt)
 
 	// add function declaration to the file
 	i.f.Decls = append(i.f.Decls, funcDecl)
