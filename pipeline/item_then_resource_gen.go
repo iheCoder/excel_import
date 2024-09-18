@@ -4,6 +4,8 @@ import (
 	"go/ast"
 )
 
+// TODO: NOT IMPLEMENTED YET
+
 var (
 	importsStmt = []string{
 		"errors",
