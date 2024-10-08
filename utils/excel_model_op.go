@@ -65,9 +65,6 @@ func GenerateExcelModelString(path string, structName string) (string, error) {
 		}
 	}
 
-	// inverse the row and column
-	contents = (contents)
-
 	return GenerateStructString(structName, fieldComments, ReverseMatrix(contents)), nil
 }
 
