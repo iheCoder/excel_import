@@ -22,7 +22,7 @@ func ReverseMatrix(contents [][]string) [][]string {
 		return contents
 	}
 
-	n := len(contents[0])
+	n := getMinColCount(contents)
 	m := len(contents)
 	res := make([][]string, n)
 	for i := 0; i < n; i++ {
@@ -33,4 +33,15 @@ func ReverseMatrix(contents [][]string) [][]string {
 	}
 
 	return res
+}
+
+func getMinColCount(contents [][]string) int {
+	result := len(contents[0])
+	for _, v := range contents {
+		if len(v) < result {
+			result = len(v)
+		}
+	}
+
+	return result
 }
