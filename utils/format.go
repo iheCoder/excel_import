@@ -3,14 +3,37 @@ package util
 import "strings"
 
 func FormatCell(cell string) string {
-	return strings.TrimSpace(removeLargeUnicodeChars(cell))
+	return strings.TrimSpace(removeSpecialChars(cell))
 }
 
-// removeLargeUnicodeChars remove all characters with Unicode code points greater than \U00100000
-func removeLargeUnicodeChars(s string) string {
+// removeSpecialChars remove all characters with Unicode code points greater than \U00100000
+// and remove zero-width characters
+func removeSpecialChars(s string) string {
+	// zeroWidthChars is a list of zero-width characters
+	zeroWidthChars := []rune{
+		0x200B, // ZERO WIDTH SPACE
+		0x200C, // ZERO WIDTH NON-JOINER
+		0x200D, // ZERO WIDTH JOINER
+		0xFEFF, // ZERO WIDTH NO-BREAK SPACE
+	}
+
 	result := make([]rune, 0, len(s))
 	for _, r := range s {
-		if r < 0x100000 {
+		// check if the character is greater than 0x100000
+		if r >= 0x100000 {
+			continue
+		}
+
+		// check if the character is a zero-width character
+		isZeroWidth := false
+		for _, zw := range zeroWidthChars {
+			if r == zw {
+				isZeroWidth = true
+				break
+			}
+		}
+		// if the character is not a zero-width character, add it to the result
+		if !isZeroWidth {
 			result = append(result, r)
 		}
 	}
